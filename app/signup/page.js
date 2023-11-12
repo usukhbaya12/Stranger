@@ -86,7 +86,6 @@ export default function SignUp() {
         <ConfigProvider
           theme={{
             token: {
-              // Seed Token
               colorTextHeading: "rgba(255,255,255)",
             },
           }}

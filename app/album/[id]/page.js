@@ -8,7 +8,7 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import { Rate, Flex, Input } from "antd";
+import { Rate, Flex, Input, ConfigProvider } from "antd";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -97,281 +97,304 @@ export default function Album() {
 
   return (
     <div className="mt-28 font-bold">
-      <div className="flex justify-between ml-24 mr-24">
-        <div className="flex">
-          <Card
-            sx={{
-              width: 400,
-              backgroundColor: "transparent",
-              boxShadow: "none",
-            }}
-          >
-            <CardMedia
+      <ConfigProvider
+        theme={{
+          token: {
+            colorTextPlaceholder: "rgb(180, 180, 180)",
+            fontFamily: "DM Sans",
+            colorBgContainer: "rgba(31,41,55,255)",
+            colorText: "rgba(255,255,255)",
+            colorFillContent: "rgba(255,255,255, 0.4)",
+          },
+        }}
+      >
+        <div className="flex justify-between ml-24 mr-24">
+          <div className="flex">
+            <Card
               sx={{
-                borderRadius: "5%",
-                borderColor: "white",
-                borderStyle: "solid",
-                borderWidth: "0.5px",
-              }}
-              component="img"
-              width="180"
-              image={
-                album.images?.[0]?.url ||
-                "https://i.scdn.co/image/ab6761610000e5eb867008a971fae0f4d913f63a"
-              }
-              alt="album cover"
-            />
-            <CardContent
-              sx={{
-                padding: "0",
-                paddingTop: "12px",
-                paddingLeft: "3px",
+                width: 400,
+                backgroundColor: "transparent",
+                boxShadow: "none",
               }}
             >
-              <Typography
-                gutterBottom
-                component="div"
-                fontFamily={"DM Sans"}
-                fontWeight={600}
-                lineHeight={0.95}
-                color="white"
-                fontSize={24}
-              >
-                {album.name}
-              </Typography>
-              <Typography
-                className="cursor-pointer text-sky-400"
-                onClick={() => clickedArtist(album.artists?.[0]?.id)}
-                fontSize={17}
-                marginTop={-1}
-                variant="body2"
-                fontWeight={600}
-                fontFamily={"DM Sans"}
-              >
-                {album.artists?.[0]?.name || "Unknown Artist"}
-              </Typography>
-              <Button
-                className="bg-white hover:bg-midnight border-transparent"
-                variant="outlined"
+              <CardMedia
                 sx={{
+                  borderRadius: "5%",
                   borderColor: "white",
-                  marginTop: "4px",
-                  textTransform: "none",
-                  marginBottom: "4px",
-                  padding: "0px",
-                  paddingLeft: "6px",
-                  paddingRight: "6px",
-                  fontWeight: "500",
-                  fontFamily: "DM Sans",
-                  backgroundColor: "white",
-                  "&:hover": {
-                    backgroundColor: "white",
-                  },
+                  borderStyle: "solid",
+                  borderWidth: "0.5px",
                 }}
-                onClick={handleToggleTracklist}
+                component="img"
+                width="180"
+                image={
+                  album.images?.[0]?.url ||
+                  "https://i.scdn.co/image/ab6761610000e5eb867008a971fae0f4d913f63a"
+                }
+                alt="album cover"
+              />
+              <CardContent
+                sx={{
+                  padding: "0",
+                  paddingTop: "12px",
+                  paddingLeft: "3px",
+                }}
               >
-                {isTracklistExpanded ? "Hide Tracklist" : "See Tracklist"}
-              </Button>
-              {isTracklistExpanded && (
-                <div
-                  style={{ color: "white", fontWeight: "400", marginTop: "2" }}
+                <Typography
+                  gutterBottom
+                  component="div"
+                  fontFamily={"DM Sans"}
+                  fontWeight={600}
+                  lineHeight={0.95}
+                  color="white"
+                  fontSize={24}
                 >
-                  <table>
-                    <tbody>
-                      {album.tracks?.items.map((track, index) => (
-                        <tr key={track.id}>
-                          <td className="text-center">{index + 1}</td>
-                          <td className="pl-2">
-                            <strong>{track.name}</strong>{" "}
-                            {formatDuration(track.duration_ms)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <div className="ml-4 max-w-sm">
-            <p className="ml-5 text-2xl">💽 {album.name}</p>
-            <table
-              style={{ color: "white", marginLeft: "20px", fontSize: "16px" }}
-            >
-              <tbody>
-                <tr>
-                  <td>Artist</td>
-                  <td>
-                    <Typography
-                      className="cursor-pointer text-sky-400"
-                      variant="body2"
-                      fontFamily={"DM Sans"}
-                      marginLeft={2}
-                      fontSize={16}
-                      fontWeight={800}
-                      onClick={() => clickedArtist(album.artists?.[0]?.id)}
-                    >
-                      {album.artists?.[0]?.name || "Unknown Artist"}
-                    </Typography>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Type</td>
-                  <td>
-                    <Typography
-                      variant="body2"
-                      textTransform="capitalize"
-                      fontFamily={"DM Sans"}
-                      marginLeft={2}
-                      fontSize={16}
-                    >
-                      {album.type}
-                    </Typography>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Released</td>
-                  <td>
-                    <Typography
-                      variant="body2"
-                      fontFamily={"DM Sans"}
-                      marginLeft={2}
-                      fontSize={16}
-                    >
-                      {album.release_date}
-                    </Typography>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Popularity</td>
-                  <td>
-                    <Typography
-                      variant="body2"
-                      fontFamily={"DM Sans"}
-                      marginLeft={2}
-                      fontSize={16}
-                    >
-                      {album.popularity}
-                    </Typography>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Label</td>
-                  <td>
-                    <Typography
-                      variant="body2"
-                      fontFamily={"DM Sans"}
-                      marginLeft={2}
-                      fontSize={16}
-                    >
-                      {album.label || "N/A"}
-                    </Typography>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Rating</td>
-                  <td>
-                    <Typography
-                      variant="body2"
-                      fontFamily={"DM Sans"}
-                      marginLeft={2}
-                      fontSize={16}
-                    >
-                      4.93/5.0 from 17 ratings
-                    </Typography>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Ranked</td>
-                  <td>
-                    <Typography
-                      variant="body2"
-                      fontFamily={"DM Sans"}
-                      marginLeft={2}
-                      fontSize={16}
-                    >
-                      #1 for 2017, #5 for overall
-                    </Typography>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            <p className="mt-4 ml-5 text-xl mb-1">🎯 Rate now</p>
-            <div>
-              <div className="flex items-center">
-                <Rate
-                  allowHalf
-                  defaultValue={0}
-                  onChange={handleRatingChange}
-                  style={{
-                    marginLeft: "20px",
-                    fontSize: "20px",
-                    border: "1px solid #ccc",
-                    paddingInline: "10px",
-                    paddingBlock: "5px",
-                    backgroundColor: "#fff",
-                    borderRadius: "10px",
-                  }}
-                />
-                <p
-                  style={{
-                    marginLeft: "10px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
+                  {album.name}
+                </Typography>
+                <Typography
+                  className="cursor-pointer text-sky-400"
+                  onClick={() => clickedArtist(album.artists?.[0]?.id)}
+                  fontSize={17}
+                  marginTop={-1}
+                  variant="body2"
+                  fontWeight={600}
+                  fontFamily={"DM Sans"}
                 >
-                  {rating.toFixed(2)}
-                </p>
-              </div>
-              <div className="block ml-5 font-normal">
-                <p className="mt-4 mb-1">
-                  <strong>Write a review</strong>
-                </p>
-                <Flex vertical gap={8}>
-                  <Input
-                    placeholder="Title"
-                    maxLength={20}
-                    required={true}
-                    style={{ fontFamily: "DM Sans" }}
-                  />
-                  <TextArea
-                    showCount
-                    maxLength={250}
-                    required={true}
-                    placeholder="Review"
+                  {album.artists?.[0]?.name || "Unknown Artist"}
+                </Typography>
+                <Button
+                  className="bg-white border-transparent"
+                  variant="outlined"
+                  sx={{
+                    borderColor: "white",
+                    marginTop: "4px",
+                    textTransform: "none",
+                    marginBottom: "4px",
+                    padding: "0px",
+                    paddingLeft: "6px",
+                    paddingRight: "6px",
+                    fontWeight: "500",
+                    fontFamily: "DM Sans",
+                    backgroundColor: "white",
+                    "&:hover": {
+                      backgroundColor: "white",
+                    },
+                  }}
+                  onClick={handleToggleTracklist}
+                >
+                  {isTracklistExpanded ? "Hide Tracklist" : "See Tracklist"}
+                </Button>
+                {isTracklistExpanded && (
+                  <div
                     style={{
-                      height: 120,
+                      color: "white",
+                      fontWeight: "400",
+                      marginTop: "2",
+                    }}
+                  >
+                    <table>
+                      <tbody>
+                        {album.tracks?.items.map((track, index) => (
+                          <tr key={track.id}>
+                            <td className="text-center">{index + 1}</td>
+                            <td className="pl-2">
+                              <strong>{track.name}</strong>{" "}
+                              {formatDuration(track.duration_ms)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <div className="ml-4 max-w-sm">
+              <p className="ml-5 text-2xl mb-3">💽 {album.name}</p>
+              <table
+                style={{ color: "white", marginLeft: "20px", fontSize: "16px" }}
+              >
+                <tbody>
+                  <tr>
+                    <td>Released</td>
+                    <td>
+                      <Typography
+                        variant="body2"
+                        fontFamily={"DM Sans"}
+                        marginLeft={2}
+                        fontSize={16}
+                      >
+                        {album.release_date}
+                      </Typography>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Artist</td>
+                    <td>
+                      <Typography
+                        className="cursor-pointer text-sky-400"
+                        variant="body2"
+                        fontFamily={"DM Sans"}
+                        marginLeft={2}
+                        fontSize={16}
+                        fontWeight={800}
+                        onClick={() => clickedArtist(album.artists?.[0]?.id)}
+                      >
+                        {album.artists?.[0]?.name || "Unknown Artist"}
+                      </Typography>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Type</td>
+                    <td>
+                      <Typography
+                        variant="body2"
+                        textTransform="capitalize"
+                        fontFamily={"DM Sans"}
+                        marginLeft={2}
+                        fontSize={16}
+                      >
+                        {album.type}
+                      </Typography>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Popularity</td>
+                    <td>
+                      <Typography
+                        variant="body2"
+                        fontFamily={"DM Sans"}
+                        marginLeft={2}
+                        fontSize={16}
+                      >
+                        {album.popularity}
+                      </Typography>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Label</td>
+                    <td>
+                      <Typography
+                        variant="body2"
+                        fontFamily={"DM Sans"}
+                        marginLeft={2}
+                        fontSize={16}
+                      >
+                        {album.label || "N/A"}
+                      </Typography>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Rating</td>
+                    <td>
+                      <Typography
+                        variant="body2"
+                        fontFamily={"DM Sans"}
+                        marginLeft={2}
+                        fontSize={16}
+                      >
+                        4.93/5.0 from 17 ratings
+                      </Typography>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Ranked</td>
+                    <td>
+                      <Typography
+                        variant="body2"
+                        fontFamily={"DM Sans"}
+                        marginLeft={2}
+                        fontSize={16}
+                      >
+                        #1 for 2017, #5 for overall
+                      </Typography>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="mt-4 ml-5 text-xl mb-1">🎯 Rate now</p>
+              <div>
+                <div className="flex items-center">
+                  <Rate
+                    className="bg-gray-800"
+                    allowHalf
+                    defaultValue={0}
+                    onChange={handleRatingChange}
+                    style={{
+                      marginLeft: "20px",
+                      fontSize: "20px",
+                      border: "1px solid #ccc",
+                      paddingInline: "10px",
+                      paddingBlock: "5px",
+                      borderRadius: "10px",
                     }}
                   />
-                </Flex>
-                <Link
-                  type="button"
-                  href="#"
-                  className="mt-2 font-semibold text-white bg-green-800 hover:bg-green-900 focus:ring-green-300 rounded-lg text-sm px-2 py-1.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
-                >
-                  Submit
-                </Link>
+                  <p
+                    style={{
+                      marginLeft: "10px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {rating.toFixed(2)}
+                  </p>
+                </div>
+                <div className="block ml-5 font-normal">
+                  <p className="mt-4 mb-1">
+                    <strong>Write a review</strong>
+                  </p>
+                  <Flex vertical gap={8}>
+                    <Input
+                      className="bg-gray-800 text-white border-dotted"
+                      placeholder="Title"
+                      maxLength={20}
+                      required={true}
+                      style={{
+                        fontFamily: "DM Sans",
+                        color: "white",
+                      }}
+                    />
+                    <TextArea
+                      className="bg-gray-800 text-white border-dotted"
+                      showCount
+                      maxLength={250}
+                      required={true}
+                      placeholder="Review"
+                      style={{
+                        height: 120,
+                        color: "white",
+                      }}
+                    />
+                  </Flex>
+                  <Link
+                    type="button"
+                    href="#"
+                    className="mt-2 font-semibold text-white bg-green-800 hover:bg-green-900 focus:ring-green-300 rounded-lg text-sm px-2 py-1.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
+                  >
+                    Submit
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="ml-8 max-w-sm font-normal">
-          <p className="text-right text-xl font-bold">Reviews</p>
-          <p className="text-right">Usukhu</p>
-          <p className="text-right">
-            Lorem Ipsum is simply dummy text of the printing and typesetting
-            industry. Lorem Ipsum has been the industry's standard dummy text
-            ever since the 1500s, when an unknown printer took a galley of type
-            and scrambled it to make a type specimen book. It has survived not
-            only five centuries, but also the leap into electronic typesetting,
-            remaining essentially unchanged. It was popularised in the 1960s
-            with the release of Letraset sheets containing Lorem Ipsum passages,
-            and more recently with desktop publishing software like Aldus
-            PageMaker including versions of Lorem Ipsum.
-          </p>
+          <div className="ml-8 max-w-sm font-normal">
+            <p className="text-right text-xl font-bold">Reviews</p>
+            <p className="text-right">Usukhu</p>
+            <p className="text-right">
+              Lorem Ipsum is simply dummy text of the printing and typesetting
+              industry. Lorem Ipsum has been the industry's standard dummy text
+              ever since the 1500s, when an unknown printer took a galley of
+              type and scrambled it to make a type specimen book. It has
+              survived not only five centuries, but also the leap into
+              electronic typesetting, remaining essentially unchanged. It was
+              popularised in the 1960s with the release of Letraset sheets
+              containing Lorem Ipsum passages, and more recently with desktop
+              publishing software like Aldus PageMaker including versions of
+              Lorem Ipsum.
+            </p>
+          </div>
         </div>
-      </div>
+      </ConfigProvider>
     </div>
   );
 }

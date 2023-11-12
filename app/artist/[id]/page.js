@@ -25,7 +25,9 @@ const Artist = () => {
           "https://accounts.spotify.com/api/token",
           {
             method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
             body: `grant_type=client_credentials&client_id=${process.env.NEXT_PUBLIC_CLIENT_ID}&client_secret=${process.env.NEXT_PUBLIC_CLIENT_SECRET}`,
           }
         );
@@ -57,23 +59,25 @@ const Artist = () => {
   };
 
   useEffect(() => {
-    const artistId = window.location.toString().slice(-22);
-    fetchArtistData(
-      `https://api.spotify.com/v1/artists/${artistId}`,
-      setArtist
-    );
-    fetchArtistData(
-      `https://api.spotify.com/v1/artists/${artistId}/related-artists`,
-      (data) => setRelatedArtists(data.artists)
-    );
+    if (accessToken) {
+      const artistId = window.location.toString().slice(-22);
+      fetchArtistData(
+        `https://api.spotify.com/v1/artists/${artistId}`,
+        setArtist
+      );
+      fetchArtistData(
+        `https://api.spotify.com/v1/artists/${artistId}/related-artists`,
+        (data) => setRelatedArtists(data.artists || [])
+      );
+    }
   }, [accessToken]);
 
   useEffect(() => {
     if (accessToken) {
       const artistId = window.location.toString().slice(-22);
       fetchArtistData(
-        `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album&limit=30`,
-        (data) => setAlbums(data.items)
+        `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album&limit=20`,
+        (data) => setAlbums(data.items || [])
       );
     }
   }, [accessToken]);
@@ -186,7 +190,11 @@ const Artist = () => {
                   <CardMedia
                     component="img"
                     width="120"
-                    image={album.images[0].url}
+                    image={
+                      album.images && album.images[0]
+                        ? album.images[0].url
+                        : defaultImageUrl
+                    }
                     alt="album cover"
                   />
                   <CardContent>
