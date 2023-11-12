@@ -23,7 +23,7 @@ const Menu = ({ data }) => {
         <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
           <a href="/" className="flex items-center">
             <img
-              src="images/Stranger-PNG.png"
+              src="/images/Stranger-PNG.png"
               className="h-12 mr-3"
               aria-current="page"
               alt="Stranger Logo"
@@ -186,7 +186,7 @@ const Menu = ({ data }) => {
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <a href="/" className="flex items-center">
           <img
-            src="images/Stranger-PNG.png"
+            src={"/images/Stranger-PNG.png"}
             className="h-12 mr-3"
             aria-current="page"
             alt="Stranger Logo"

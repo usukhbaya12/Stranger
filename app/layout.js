@@ -16,7 +16,7 @@ export default function RootLayout({ Component, pageProps, children }) {
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          <div className="fixed inset-x-0 top-0">
+          <div className="z-10 fixed inset-x-0 top-0">
             <Menu />
           </div>
           <div>{children}</div>

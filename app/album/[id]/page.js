@@ -91,9 +91,9 @@ export default function Album() {
     setRating(value);
   };
 
-  async function clickedArtist(artistID) {
+  const clickedArtist = (artistID) => {
     router.replace(`/artist/${artistID}`);
-  }
+  };
 
   return (
     <div className="mt-28 font-bold">
@@ -115,7 +115,10 @@ export default function Album() {
               }}
               component="img"
               width="180"
-              image={album.images?.[0]?.url || "your_default_image_url_here"}
+              image={
+                album.images?.[0]?.url ||
+                "https://i.scdn.co/image/ab6761610000e5eb867008a971fae0f4d913f63a"
+              }
               alt="album cover"
             />
             <CardContent
@@ -137,12 +140,12 @@ export default function Album() {
                 {album.name}
               </Typography>
               <Typography
+                className="cursor-pointer text-sky-400"
                 onClick={() => clickedArtist(album.artists?.[0]?.id)}
                 fontSize={17}
                 marginTop={-1}
                 variant="body2"
                 fontWeight={600}
-                color="#147FFF"
                 fontFamily={"DM Sans"}
               >
                 {album.artists?.[0]?.name || "Unknown Artist"}
@@ -200,12 +203,12 @@ export default function Album() {
                   <td>Artist</td>
                   <td>
                     <Typography
+                      className="cursor-pointer text-sky-400"
                       variant="body2"
                       fontFamily={"DM Sans"}
                       marginLeft={2}
                       fontSize={16}
                       fontWeight={800}
-                      color="#147FFF"
                       onClick={() => clickedArtist(album.artists?.[0]?.id)}
                     >
                       {album.artists?.[0]?.name || "Unknown Artist"}

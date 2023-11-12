@@ -7,7 +7,9 @@ import CardMedia from "@mui/material/CardMedia";
 import Typography from "@mui/material/Typography";
 import { CardActionArea } from "@mui/material";
 import { useRouter } from "next/navigation";
-const defaultImageUrl = "your_default_image_url_here";
+
+const defaultImageUrl =
+  "https://i.scdn.co/image/ab6761610000e5eb867008a971fae0f4d913f63a";
 require("dotenv").config();
 
 export default function Search({ searchParams }) {
@@ -74,9 +76,13 @@ export default function Search({ searchParams }) {
     }
   }, [accessToken, searchParams]);
 
-  async function clickedAlbum(albumID) {
+  const clickedAlbum = (albumID) => {
     router.replace(`/album/${albumID}`);
-  }
+  };
+
+  const clickedArtist = (artistID) => {
+    router.replace(`/artist/${artistID}`);
+  };
 
   return (
     <div className="mt-28 justify-center items-center">
@@ -87,16 +93,19 @@ export default function Search({ searchParams }) {
         <p className="ml-56">😔 No results were found. Please try again!</p>
       ) : (
         <div className="grid grid-cols-4 gap-10 px-56">
-          {artists.map((artist, index) => (
-            <Card sx={{ backgroundColor: "transparent", boxShadow: "none" }}>
-              <CardActionArea>
+          {artists.map((artist) => (
+            <Card
+              key={artist.id}
+              sx={{ backgroundColor: "transparent", boxShadow: "none" }}
+            >
+              <CardActionArea onClick={() => clickedArtist(artist.id)}>
                 <CardMedia
                   component="img"
                   sx={{ width: 180, height: 180, borderRadius: "50%" }}
                   image={
                     artist.images[0] ? artist.images[0].url : defaultImageUrl
                   }
-                  alt="album cover"
+                  alt="artist cover"
                 />
                 <CardContent>
                   <Typography
@@ -130,8 +139,8 @@ export default function Search({ searchParams }) {
         <p className="ml-56">😔 No results were found. Please try again!</p>
       ) : (
         <div className="grid grid-cols-4 gap-10 px-56">
-          {albums.map((album, index) => (
-            <Card sx={{ width: 220, borderRadius: "5%" }}>
+          {albums.map((album) => (
+            <Card key={album.id} sx={{ width: 220, borderRadius: "5%" }}>
               <CardActionArea onClick={() => clickedAlbum(album.id)}>
                 <CardMedia
                   component="img"
