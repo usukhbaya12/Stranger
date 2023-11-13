@@ -38,9 +38,9 @@ const Menu = () => {
 
   return (
     <nav
-      className={`dark:bg-${
+      className={`dark:bg-${hasBackground ? "midnight" : "transparent"} bg-${
         hasBackground ? "midnight" : "transparent"
-      } border-gray-200 bg-midnight fixed top-0 w-full transition-all duration-300 ease-in-out`}
+      } border-gray-200 fixed top-0 w-full transition-all duration-300 ease-in-out`}
     >
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <a href="/" className="flex items-center">
@@ -165,7 +165,7 @@ const Menu = () => {
           <ul className="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-transparent dark:border-gray-700">
             <li>
               <a
-                href="#NewMusic"
+                href="/#NewMusic"
                 className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 md:dark:hover:text-blue-500 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700"
               >
                 💿 New Music
@@ -173,7 +173,7 @@ const Menu = () => {
             </li>
             <li>
               <a
-                href="#"
+                href="/genres"
                 className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 md:dark:hover:text-blue-500 dark:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700"
               >
                 🎺 Genres

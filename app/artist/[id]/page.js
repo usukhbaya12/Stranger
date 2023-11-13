@@ -94,7 +94,7 @@ const Artist = () => {
     <div className="font-bold mt-32 ml-24">
       <div className="flex justify-between">
         {artist.length === 0 ? (
-          <p className="ml-56">😔 No results were found. Please try again!</p>
+          <p className="ml-56"></p>
         ) : (
           <div className="flex">
             {artist && artist.images && artist.images[0] ? (
@@ -111,7 +111,7 @@ const Artist = () => {
                 <>
                   <p className="text-3xl">{artist.name}</p>
                   <p className="ml-1 font-normal">Genres:</p>
-                  <p className="ml-1 font-bold text-sky-400 cursor-pointer leading-4">
+                  <p className="ml-1 font-bold text-sky-400 cursor-default leading-4">
                     {artist.genres?.length > 0 &&
                       artist.genres.slice(0, 3).map((genre, index) => (
                         <span key={index}>
