@@ -32,7 +32,7 @@ export default function SignIn() {
 
   return (
     <div className="flex justify-center items-center h-screen">
-      <div className=" w-full max-w-xs">
+      <div className="leading-6 px-36 py-8 border-solid border border-dashed rounded-3xl bg-gray-800">
         <div className="text-center leading-6 text-xl mb-6 font-bold">
           <h2>Sign In</h2>
         </div>

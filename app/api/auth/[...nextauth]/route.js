@@ -27,16 +27,38 @@ const authOptions = {
             return null;
           }
 
-          return user;
+          return {
+            id: user._id,
+            email: user.email,
+            username: username,
+            name: user.name,
+            bio: user.bio,
+          };
         } catch (error) {
           console.log(error);
         }
       },
     }),
   ],
-  callbacks: {},
-  session: {
-    strategy: "jwt",
+  callbacks: {
+    jwt: ({ token, user, trigger }) => {
+      if (user) {
+        token.user = user;
+      }
+
+      if (trigger === "update" && session?.name) {
+        token.name = session.name;
+      }
+
+      return token;
+    },
+    session: async ({ session, token }) => {
+      if (token) {
+        session.user = token.user;
+      }
+
+      return session;
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
   pages: {

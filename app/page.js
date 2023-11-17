@@ -10,6 +10,7 @@ import CardMedia from "@mui/material/CardMedia";
 import Typography from "@mui/material/Typography";
 import { CardActionArea } from "@mui/material";
 import { useRouter } from "next/navigation";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -260,7 +261,7 @@ export default function Home() {
         {grammysAlbums.length === 0 ? (
           <p className="ml-56"></p>
         ) : (
-          <div className="grid grid-cols-8 gap-2 px-24 mr-16">
+          <div className="grid grid-cols-8 gap-2 px-24 mr-8">
             {grammysAlbums.map((album) => (
               <Card
                 className="bg-transparent"
@@ -312,6 +313,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      <Footer />
     </main>
   );
 }
