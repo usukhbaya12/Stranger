@@ -8,6 +8,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import { CardActionArea } from "@mui/material";
 import { useRouter } from "next/navigation";
+import Footer from "@/components/Footer";
 
 export default function Genres() {
   const [genres, setGenres] = useState([]);
@@ -106,10 +107,10 @@ export default function Genres() {
   }
 
   return (
-    <div className="mt-24 px-24">
-      <p className="mb-4 font-bold text-xl">Available Genres</p>
+    <div className="mt-24">
+      <p className=" px-24 mb-4 font-bold text-xl">Available Genres</p>
       <TextField
-        className="text-white bg-gray-800 rounded-2xl"
+        className="text-white bg-gray-800 rounded-2xl ml-24"
         label="Search Genres"
         variant="outlined"
         onChange={(e) => setSearchTerm(e.target.value)}
@@ -123,7 +124,7 @@ export default function Genres() {
           inputMode: "search",
           endAdornment: (
             <InputAdornment
-              style={{ color: "white", fontFamily: "DM Sans" }}
+              style={{ color: "white", fontFamily: "DM Sans", paddingBlock: 0 }}
               position="end"
             >
               <button onClick={() => setSearchTerm("")}>Clear</button>
@@ -137,7 +138,7 @@ export default function Genres() {
           },
         }}
       />
-      <div className="grid grid-cols-6 gap-4 mt-4 cursor-pointer">
+      <div className="px-24 grid grid-cols-6 gap-4 mt-6 cursor-pointer">
         {filteredGenres?.map((genre) => (
           <Card
             key={genre}
@@ -166,6 +167,7 @@ export default function Genres() {
           </Card>
         ))}
       </div>
+      <Footer />
     </div>
   );
 }

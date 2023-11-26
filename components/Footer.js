@@ -1,5 +1,6 @@
 import { signIn, signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
+import { FacebookFilled, YoutubeFilled } from "@ant-design/icons";
 
 export default function Footer() {
   const { data: session } = useSession();
@@ -10,6 +11,12 @@ export default function Footer() {
         <p className="text-sm font-bold ml-1 leading-3">
           Your Online<br></br>Music Portal
         </p>
+        <a className="ml-1" href="https://facebook.com/Strangerentnews">
+          <FacebookFilled></FacebookFilled>
+        </a>
+        <a className="ml-1" href="https://youtube.com/@StrangerTVMongolia">
+          <YoutubeFilled></YoutubeFilled>
+        </a>
       </div>
       <div className="mt-10 -ml-16">
         <p className="font-bold">Links</p>
@@ -61,9 +68,11 @@ export default function Footer() {
       </div>
       <div className="mt-10 text-right">
         <p className="font-bold">Made with</p>
-        <p className="text-sm">
-          Next.js<br></br>Spotify API
-        </p>
+        <p className="text-sm">Next.js</p>
+        <div className="flex">
+          <img src="/images/spotify.png" style={{ height: "20px" }}></img>{" "}
+          <p className="text-sm">API</p>
+        </div>
       </div>
     </div>
   );

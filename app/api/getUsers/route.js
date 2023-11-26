@@ -6,10 +6,16 @@ export async function POST(req) {
   try {
     await connectMongo();
     const { username } = await req.json();
+    console.log("Received query:", username);
 
-    const user = await Users.findOne({ username });
+    const users = await Users.find({
+      $or: [
+        { username: { $regex: username, $options: "i" } },
+        { name: { $regex: username, $options: "i" } },
+      ],
+    });
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ users });
   } catch (error) {
     console.error("Error in POST function:", error);
   }

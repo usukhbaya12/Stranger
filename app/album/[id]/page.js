@@ -1,24 +1,35 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardMedia,
-  CardContent,
-  Typography,
-  Button,
-} from "@mui/material";
-import { Rate, Flex, Input, ConfigProvider } from "antd";
-import Link from "next/link";
+import { Card, CardMedia, CardContent, Typography } from "@mui/material";
+import { Rate, Input, ConfigProvider, Modal } from "antd";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { Button, Form, Tooltip } from "antd";
+import Footer from "@/components/Footer";
+import { LikeOutlined, DislikeOutlined } from "@ant-design/icons";
 
 export default function Album() {
+  const { data: session } = useSession();
   const { TextArea } = Input;
   const router = useRouter();
   const [album, setAlbum] = useState([]);
   const [accessToken, setAccessToken] = useState("");
-  const [isTracklistExpanded, setTracklistExpanded] = useState(false);
   const [rating, setRating] = useState(0);
+  const [title, setTitle] = useState("");
+  const [comment, setComment] = useState("");
+  const [userRating, setUserRating] = useState(0);
+  const [userTitle, setUserTitle] = useState("");
+  const [userComment, setUserComment] = useState("");
+  const [allReviews, setAllReviews] = useState([]);
+  const [userReview, setUserReview] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
+  const [reviewers, setReviewers] = useState([]);
+  const [pics, setPics] = useState([]);
+  const [likedReviews, setLikedReviews] = useState([]);
+  const [dislikedReviews, setDislikedReviews] = useState([]);
+  const username = session?.user?.username;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,42 +60,131 @@ export default function Album() {
   }, []);
 
   useEffect(() => {
-    const fetchAlbum = async () => {
-      try {
-        const path = window.location;
-        const id = path.toString().slice(-22);
+    fetchReviewData();
+    fetchAllReviews();
+  }, [accessToken, username]);
 
-        const artistParameters = {
-          method: "GET",
+  useEffect(() => {
+    showFollowersModal();
+  });
+
+  const fetchReviewData = async () => {
+    try {
+      const path = window.location;
+      const id = path.toString().slice(-22);
+
+      const artistParameters = {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + accessToken,
+        },
+      };
+
+      const response = await fetch(
+        `https://api.spotify.com/v1/albums/${id}`,
+        artistParameters
+      );
+      const data = await response.json();
+      setAlbum(data);
+      console.log(data);
+
+      if (username && data.id) {
+        const reviewResponse = await fetch("/api/getUserReview", {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: "Bearer " + accessToken,
           },
-        };
+          body: JSON.stringify({
+            albumId: data.id,
+            username: username,
+          }),
+        });
 
-        const response = await fetch(
-          `https://api.spotify.com/v1/albums/${id}`,
-          artistParameters
-        );
-        const data = await response.json();
-        setAlbum(data);
-        console.log(data);
-      } catch (error) {
-        console.error("Error fetching data: ", error);
+        if (reviewResponse.ok) {
+          const reviewData = await reviewResponse.json();
+          if (reviewData.success) {
+            setUserReview(true);
+            setUserRating(reviewData.data.rating || 0);
+            setUserTitle(reviewData.data.title || "");
+            setUserComment(reviewData.data.comment || "");
+          } else {
+            setUserReview(false);
+          }
+        } else {
+          console.error(
+            "Failed to fetch user review:",
+            reviewResponse.statusText
+          );
+        }
       }
-    };
+    } catch (error) {
+      console.error("Error fetching data: ", error);
+    }
+  };
 
-    fetchAlbum();
-  }, [accessToken]);
+  const fetchAllReviews = async () => {
+    try {
+      const response = await fetch("/api/getAlbumReviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId: album.id,
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAllReviews(data.data);
+          setLikedReviews(data.data.liked || []);
+          setDislikedReviews(data.data.disliked || []);
+          const usernames = data.data.map((item) => item.username);
+          setReviewers(usernames);
+        } else {
+          console.error("Failed to fetch all reviews:", data.error);
+        }
+      } else {
+        console.error("Failed to fetch all reviews:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching all reviews:", error);
+    }
+  };
 
-  const handleToggleTracklist = () => {
-    setTracklistExpanded(!isTracklistExpanded);
+  const showFollowersModal = async () => {
+    try {
+      const response = await fetch("/api/getReviewers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userIds: reviewers,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch followers:", response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      setPics(data.followers);
+    } catch (error) {
+      console.error("Error fetching followers:", error);
+    }
   };
 
   const formatDuration = (durationMs) => {
     const minutes = Math.floor(durationMs / 60000);
     const seconds = ((durationMs % 60000) / 1000).toFixed(0);
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  const showFollowingModal = () => {
+    setIsFollowingModalOpen(true);
   };
 
   const handleRatingChange = (value) => {
@@ -95,10 +195,116 @@ export default function Album() {
     router.replace(`/artist/${artistID}`);
   };
 
+  const showModal = () => {
+    handleReview();
+    setInfoModalVisible(true);
+  };
+
+  const handleOk = () => {
+    setInfoModalVisible(false);
+    fetchReviewData();
+    fetchAllReviews();
+  };
+
+  const okButtonProps = {
+    style: {
+      background: "#4096FF",
+      borderColor: "sky",
+    },
+  };
+  const cancelButtonProps = {
+    style: {
+      display: "none",
+    },
+  };
+
+  const handleReview = async () => {
+    try {
+      const response = await fetch("/api/saveReview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId: album.id,
+          username: username,
+          title: title,
+          comment: comment,
+          rating: rating,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save review:", response.statusText);
+        return;
+      }
+
+      console.log("Review saved successfully!");
+    } catch (error) {
+      console.error("Error saving review:", error);
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    try {
+      const response = await fetch("/api/deleteReview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId: album.id,
+          username: username,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          console.log("Review deleted successfully!");
+          fetchReviewData();
+        } else {
+          console.error("Failed to delete review:", data.message);
+        }
+      } else {
+        console.error("Failed to delete review:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error deleting review:", error);
+    }
+    setIsFollowingModalOpen(false);
+    fetchAllReviews();
+  };
+
+  const calculateAverageRating = (reviews) => {
+    if (!reviews || reviews.length === 0) {
+      return 0;
+    }
+
+    const totalRating = reviews.reduce(
+      (sum, review) => sum + (review.rating || 0),
+      0
+    );
+    return totalRating / reviews.length;
+  };
+
+  const averageRating = calculateAverageRating(allReviews || []);
+  const totalRatings = (allReviews || []).length;
+
+  const userImages = {};
+  pics.forEach((pic) => {
+    userImages[pic.username] = pic.image;
+  });
+
   return (
-    <div className="mt-28 font-bold">
+    <div className="mt-72">
       <ConfigProvider
         theme={{
+          components: {
+            Modal: {
+              titleColor: "black",
+            },
+          },
           token: {
             colorTextPlaceholder: "rgb(180, 180, 180)",
             fontFamily: "DM Sans",
@@ -108,13 +314,30 @@ export default function Album() {
           },
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            zIndex: "-1",
+            width: "100%",
+            height: "50%",
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0), rgba(13, 23, 34)), url(${
+              album.images?.[0]?.url ||
+              "https://i.scdn.co/image/ab6761610000e5eb867008a971fae0f4d913f63a"
+            })`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
         <div className="flex justify-between ml-24 mr-24">
           <div className="flex">
             <Card
               sx={{
-                width: 400,
+                width: 310,
                 backgroundColor: "transparent",
                 boxShadow: "none",
+                position: "relative",
               }}
             >
               <CardMedia
@@ -138,84 +361,72 @@ export default function Album() {
                   paddingTop: "12px",
                   paddingLeft: "3px",
                 }}
-              >
-                <Typography
-                  gutterBottom
-                  component="div"
-                  fontFamily={"DM Sans"}
-                  fontWeight={600}
-                  lineHeight={0.95}
-                  color="white"
-                  fontSize={24}
-                >
-                  {album.name}
-                </Typography>
-                <Typography
-                  className="cursor-pointer text-sky-400"
-                  onClick={() => clickedArtist(album.artists?.[0]?.id)}
-                  fontSize={17}
-                  marginTop={-1}
-                  variant="body2"
-                  fontWeight={600}
-                  fontFamily={"DM Sans"}
-                >
-                  {album.artists?.[0]?.name || "Unknown Artist"}
-                </Typography>
-                <Button
-                  className="bg-white border-transparent"
-                  variant="outlined"
-                  sx={{
-                    borderColor: "white",
-                    marginTop: "4px",
-                    textTransform: "none",
-                    marginBottom: "4px",
-                    padding: "0px",
-                    paddingLeft: "6px",
-                    paddingRight: "6px",
-                    fontWeight: "500",
-                    fontFamily: "DM Sans",
-                    backgroundColor: "white",
-                    "&:hover": {
-                      backgroundColor: "white",
-                    },
-                  }}
-                  onClick={handleToggleTracklist}
-                >
-                  {isTracklistExpanded ? "Hide Tracklist" : "See Tracklist"}
-                </Button>
-                {isTracklistExpanded && (
-                  <div
-                    style={{
-                      color: "white",
-                      fontWeight: "400",
-                      marginTop: "2",
-                    }}
-                  >
-                    <table>
-                      <tbody>
-                        {album.tracks?.items.map((track, index) => (
-                          <tr key={track.id}>
-                            <td className="text-center">{index + 1}</td>
-                            <td className="pl-2">
-                              <strong>{track.name}</strong>{" "}
-                              {formatDuration(track.duration_ms)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
+              ></CardContent>
             </Card>
-            <div className="ml-4 max-w-sm">
-              <p className="ml-5 text-2xl mb-3">💽 {album.name}</p>
+            <div className="ml-4">
+              <p
+                id="albumname"
+                className="ml-5 text-3xl mb-1 font-black"
+                style={{ maxWidth: "460px" }}
+              >
+                {album.name}
+              </p>
+              <Typography
+                className="cursor-pointer text-sky-400"
+                onClick={() => clickedArtist(album.artists?.[0]?.id)}
+                fontSize={17}
+                marginTop={-1}
+                marginLeft={"20px"}
+                variant="body2"
+                fontWeight={700}
+                fontFamily={"DM Sans"}
+              >
+                {album.artists?.[0]?.name || "Unknown Artist"}
+              </Typography>
+
+              <div
+                style={{
+                  color: "white",
+                  fontWeight: "400",
+                  marginTop: "4px",
+                  marginLeft: "20px",
+                  fontSize: "14px",
+                  lineHeight: "1.2",
+                  height: "123px",
+                  maxWidth: "420px",
+                  overflowX: "auto",
+                  overflowY: "scroll",
+                  background: "rgb(31 41 55)",
+                  border: "white solid 1px",
+                  borderRadius: "10px",
+                  padding: "5px",
+                }}
+              >
+                <table>
+                  <tbody>
+                    {album.tracks?.items.map((track, index) => (
+                      <tr key={track.id}>
+                        <td className="text-center">{index + 1}</td>
+                        <td className="pl-2">
+                          <strong>{track.name}</strong>{" "}
+                          {formatDuration(track.duration_ms)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <table
-                style={{ color: "white", marginLeft: "20px", fontSize: "16px" }}
+                style={{
+                  color: "white",
+                  marginLeft: "20px",
+                  fontSize: "16px",
+                  marginTop: "4px",
+                }}
               >
                 <tbody>
                   <tr>
-                    <td>Released</td>
+                    <td className="font-semibold">Released</td>
                     <td>
                       <Typography
                         variant="body2"
@@ -227,51 +438,9 @@ export default function Album() {
                       </Typography>
                     </td>
                   </tr>
+
                   <tr>
-                    <td>Artist</td>
-                    <td>
-                      <Typography
-                        className="cursor-pointer text-sky-400"
-                        variant="body2"
-                        fontFamily={"DM Sans"}
-                        marginLeft={2}
-                        fontSize={16}
-                        fontWeight={800}
-                        onClick={() => clickedArtist(album.artists?.[0]?.id)}
-                      >
-                        {album.artists?.[0]?.name || "Unknown Artist"}
-                      </Typography>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Type</td>
-                    <td>
-                      <Typography
-                        variant="body2"
-                        textTransform="capitalize"
-                        fontFamily={"DM Sans"}
-                        marginLeft={2}
-                        fontSize={16}
-                      >
-                        {album.type}
-                      </Typography>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Popularity</td>
-                    <td>
-                      <Typography
-                        variant="body2"
-                        fontFamily={"DM Sans"}
-                        marginLeft={2}
-                        fontSize={16}
-                      >
-                        {album.popularity}
-                      </Typography>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Label</td>
+                    <td className="font-semibold">Label</td>
                     <td>
                       <Typography
                         variant="body2"
@@ -284,7 +453,7 @@ export default function Album() {
                     </td>
                   </tr>
                   <tr>
-                    <td>Rating</td>
+                    <td className="font-semibold">Rating</td>
                     <td>
                       <Typography
                         variant="body2"
@@ -292,12 +461,19 @@ export default function Album() {
                         marginLeft={2}
                         fontSize={16}
                       >
-                        4.93/5.0 from 17 ratings
+                        <span className="text-sky-400 font-black text-xl">
+                          {averageRating.toFixed(2)}
+                        </span>{" "}
+                        / 5.0 from{" "}
+                        <span className="text-gray-400">
+                          <span className="font-bold">{totalRatings}</span>{" "}
+                          ratings
+                        </span>
                       </Typography>
                     </td>
                   </tr>
                   <tr>
-                    <td>Ranked</td>
+                    <td className="font-semibold">Ranked</td>
                     <td>
                       <Typography
                         variant="body2"
@@ -311,90 +487,277 @@ export default function Album() {
                   </tr>
                 </tbody>
               </table>
-              <p className="mt-4 ml-5 text-xl mb-1">🎯 Rate now</p>
-              <div>
-                <div className="flex items-center">
-                  <Rate
-                    className="bg-gray-800"
-                    allowHalf
-                    defaultValue={0}
-                    onChange={handleRatingChange}
-                    style={{
-                      marginLeft: "20px",
-                      fontSize: "20px",
-                      border: "1px solid #ccc",
-                      paddingInline: "10px",
-                      paddingBlock: "5px",
-                      borderRadius: "10px",
-                    }}
-                  />
-                  <p
-                    style={{
-                      marginLeft: "10px",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                    }}
-                  >
-                    {rating.toFixed(2)}
-                  </p>
+            </div>
+          </div>
+          {userReview && (
+            <div>
+              <p className="text-center font-semibold">Your rating</p>
+              <div className="flex items-center justify-center">
+                <Rate
+                  allowHalf
+                  defaultValue={userRating}
+                  disabled
+                  style={{
+                    fontSize: "30px",
+                    paddingInline: "10px",
+                    paddingBlock: "5px",
+                    borderRadius: "10px",
+                  }}
+                />
+              </div>
+              <p className="text-center font-normal">
+                <span className="text-2xl font-black text-sky-400">
+                  {userRating.toFixed(1)}
+                </span>{" "}
+                / 5.0
+              </p>
+              <p className="text-sm font-normal text-center mt-4 -mb-2">
+                Click below to see your review.
+              </p>
+              <div
+                onClick={showFollowingModal}
+                className="flex mt-3 border border-white p-2 rounded-xl cursor-pointer hover:bg-gray-600"
+                style={{ minWidth: "250px", maxWidth: "350px" }}
+              >
+                <img
+                  className="cursor-pointer"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                  }}
+                  src={userImages[username] || "/images/profile.png"}
+                />
+                <div className="ml-2 leading-5 font-normal">
+                  <p className="cursor-pointer">@{username}</p>
+                  <p className="font-semibold">"{userTitle}"</p>
                 </div>
-                <div className="block ml-5 font-normal">
-                  <p className="mt-4 mb-1">
-                    <strong>Write a review</strong>
-                  </p>
-                  <Flex vertical gap={8}>
+              </div>
+
+              <Modal
+                title={`My review of ${album.name}`}
+                style={{ color: "black" }}
+                open={isFollowingModalOpen}
+                onCancel={() => setIsFollowingModalOpen(false)}
+                footer={
+                  <Tooltip
+                    className="text-center"
+                    title="Are you sure? This action can't be undone."
+                  >
+                    <Button
+                      key="delete"
+                      onClick={handleDeleteReview}
+                      style={{ color: "red", borderColor: "red" }}
+                    >
+                      Delete
+                    </Button>
+                  </Tooltip>
+                }
+              >
+                <p className="font-semibold mt-2">@{username}</p>
+                <p className="mt-2 font-semibold">{userTitle}</p>
+                <p className="text-justify">{userComment}</p>
+              </Modal>
+            </div>
+          )}
+          {!userReview && (
+            <div>
+              <p className="text-center font-semibold">Rate now 🎯</p>
+              <div className="flex items-center justify-center">
+                <Rate
+                  allowHalf
+                  defaultValue={0}
+                  onChange={handleRatingChange}
+                  style={{
+                    fontSize: "30px",
+                    paddingInline: "10px",
+                    paddingBlock: "5px",
+                    borderRadius: "10px",
+                  }}
+                />
+              </div>
+              <div className="block font-normal">
+                <p className="mt-4 mb-1 font-semibold">
+                  Write a review
+                  <span className="text-red-600">*</span>
+                </p>
+
+                <Form onFinish={showModal} name="title">
+                  <Form.Item name="title">
                     <Input
-                      className="bg-gray-800 text-white border-dotted"
-                      placeholder="Title"
-                      maxLength={20}
-                      required={true}
                       style={{
-                        fontFamily: "DM Sans",
                         color: "white",
                       }}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Title"
+                      required={true}
+                      value={userTitle}
                     />
+                  </Form.Item>
+                  <Form.Item name="comment">
                     <TextArea
-                      className="bg-gray-800 text-white border-dotted"
-                      showCount
-                      maxLength={250}
+                      className="bg-gray-800 text-white border"
+                      onChange={(event) => setComment(event.target.value)}
+                      maxLength={1000}
                       required={true}
                       placeholder="Review"
                       style={{
-                        height: 120,
+                        height: 100,
                         color: "white",
+                        marginTop: "-16px",
+                        minWidth: "250px",
                       }}
                     />
-                  </Flex>
-                  <Link
-                    type="button"
-                    href="#"
-                    className="mt-2 font-semibold text-white bg-green-800 hover:bg-green-900 focus:ring-green-300 rounded-lg text-sm px-2 py-1.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
+                  </Form.Item>
+
+                  <Form.Item
+                    className="text-white -mt-4 items-end flex"
+                    style={{ display: "flex", justifyContent: "flex-end" }}
                   >
-                    Submit
-                  </Link>
-                </div>
+                    <Button
+                      htmlType="submit"
+                      style={{
+                        backgroundColor: "green",
+                        color: "white",
+                        borderColor: "white",
+                      }}
+                    >
+                      Submit
+                    </Button>
+                  </Form.Item>
+                </Form>
+                <Modal
+                  style={{
+                    color: "black",
+                    titleColor: "black",
+                    maxWidth: "400px",
+                  }}
+                  className="text-gray-800"
+                  title="Review Submitted"
+                  okButtonProps={okButtonProps}
+                  open={infoModalVisible}
+                  onOk={handleOk}
+                  cancelButtonProps={cancelButtonProps}
+                  closeIcon={false}
+                >
+                  <p>Your review has been submitted successfully!</p>
+                </Modal>
               </div>
             </div>
-          </div>
-
-          <div className="ml-8 max-w-sm font-normal">
-            <p className="text-right text-xl font-bold">Reviews</p>
-            <p className="text-right">Usukhu</p>
-            <p className="text-right">
-              Lorem Ipsum is simply dummy text of the printing and typesetting
-              industry. Lorem Ipsum has been the industry's standard dummy text
-              ever since the 1500s, when an unknown printer took a galley of
-              type and scrambled it to make a type specimen book. It has
-              survived not only five centuries, but also the leap into
-              electronic typesetting, remaining essentially unchanged. It was
-              popularised in the 1960s with the release of Letraset sheets
-              containing Lorem Ipsum passages, and more recently with desktop
-              publishing software like Aldus PageMaker including versions of
-              Lorem Ipsum.
-            </p>
-          </div>
+          )}
         </div>
       </ConfigProvider>
+      <div className="-mt-3 flex justify-between ml-24 mr-24 font-normal">
+        <ConfigProvider
+          theme={{
+            components: {
+              Modal: {
+                titleColor: "black",
+              },
+            },
+            token: {
+              colorTextPlaceholder: "rgb(180, 180, 180)",
+              fontFamily: "DM Sans",
+              colorBgContainer: "rgba(31,41,55,255)",
+              colorText: "rgba(255,255,255)",
+              colorFillContent: "rgba(255,255,255, 0.4)",
+              marginXS: "6",
+            },
+          }}
+        >
+          <div className="max-w-[800px]">
+            <p className="font-bold text-xl">✨ Popular reviews</p>
+            {allReviews.length === 0 ? (
+              <p className="leading-4 mt-1">
+                No reviews found.<br></br>Be the first to review this album!
+              </p>
+            ) : (
+              <ul>
+                {allReviews.map((review) => (
+                  <li key={review._id}>
+                    <div className="flex items-center mt-4 bg-gray-700 rounded-full p-2">
+                      <img
+                        className="cursor-pointer"
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                        }}
+                        src={
+                          userImages[review.username] || "/images/profile.png"
+                        }
+                      />
+                      <div className="ml-2 leading-5 font-normal">
+                        <p className="cursor-pointer">@{review.username}</p>
+                        <Rate
+                          allowHalf
+                          defaultValue={review.rating}
+                          disabled
+                          style={{
+                            fontSize: "13px",
+                            paddingBlock: "2px",
+                            borderRadius: "10px",
+                          }}
+                        />
+                      </div>
+                      <div className="ml-4 flex items-center">
+                        <Tooltip title="Like">
+                          <LikeOutlined
+                            style={{
+                              color: likedReviews.includes(review._id)
+                                ? "green"
+                                : "white",
+                            }}
+                            onClick={() => handleLike(review._id)}
+                          />
+                        </Tooltip>
+                        <p>{review.likes}</p>
+                        <Tooltip title="Dislike">
+                          <DislikeOutlined
+                            style={{
+                              color: dislikedReviews.includes(review._id)
+                                ? "red"
+                                : "white",
+                            }}
+                            onClick={() => handleDislike(review._id)}
+                          />
+                        </Tooltip>
+                        <p>{review.dislikes}</p>
+                      </div>
+                    </div>
+                    <div className="ml-[58px] mt-2">
+                      <p className="font-semibold">{review.title}</p>
+                      <p>{review.comment}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div>
+            <p
+              style={{ width: "250px" }}
+              className="text-center font-bold items-end"
+            >
+              Explore {album.name} 🎧
+            </p>
+            <p className="text-center mt-1">Listen on </p>
+            <div className="flex justify-center items-center">
+              <a href={`https://open.spotify.com/album/${album.id}`}>
+                <img
+                  className="ml-1 cursor-pointer"
+                  src="/images/spotify.png"
+                  style={{ height: "24px" }}
+                ></img>
+              </a>
+              <p className="ml-1 bg-green-600 rounded-full w-7 h-7 flex items-center justify-center text-xs font-semibold">
+                {album.popularity}
+              </p>
+            </div>
+          </div>
+        </ConfigProvider>
+      </div>
+      <Footer />
     </div>
   );
 }

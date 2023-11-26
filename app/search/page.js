@@ -16,6 +16,7 @@ export default function Search({ searchParams }) {
   const [accessToken, setAccessToken] = useState("");
   const [albums, setAlbums] = useState([]);
   const [artists, setArtists] = useState([]);
+  const [users, setUsers] = useState([]);
   const [resultType, setResultType] = useState("artists");
   const router = useRouter();
 
@@ -74,32 +75,105 @@ export default function Search({ searchParams }) {
     }
   }, [accessToken, searchParams]);
 
-  const clickedAlbum = (albumID) => {
-    router.replace(`/album/${albumID}`);
+  const getUsers = async () => {
+    try {
+      const resGetUsers = await fetch("/api/getUsers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: searchParams.q }),
+      });
+
+      if (!resGetUsers.ok) {
+        console.error("Failed to fetch user data:", resGetUsers.statusText);
+        return;
+      }
+
+      const users = await resGetUsers.json();
+      setUsers(users.users);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  useEffect(() => {
+    getUsers();
+  }, [searchParams.q]);
+
+  const clickedAlbum = async (
+    albumID,
+    albumName,
+    artistName,
+    releaseDate,
+    imageUrl,
+    label,
+    tracks
+  ) => {
+    try {
+      const response = await fetch("/api/saveAlbum", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId: albumID,
+          name: albumName,
+          artist: artistName,
+          released: releaseDate,
+          image: imageUrl,
+          label: label,
+          total_tracks: tracks,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save clicked album:", response.statusText);
+        return;
+      }
+
+      console.log("Album saved successfully!");
+
+      router.replace(`/album/${albumID}`);
+    } catch (error) {
+      console.error("Error saving clicked album:", error);
+    }
   };
 
   const clickedArtist = (artistID) => {
     router.replace(`/artist/${artistID}`);
   };
 
+  const clickedUser = (username) => {
+    router.replace(`/user/${username}`);
+  };
+
   return (
     <div className="mt-24 justify-center items-center">
       <div className="ml-24 mb-4 font-bold">
         <button
+          onClick={() => setResultType("artists")}
           className={`border border-white border-solid rounded-xl px-2 py-1 ${
             resultType === "artists" ? "bg-white" : ""
           } ${resultType === "artists" ? "text-midnight" : "text-white"}`}
-          onClick={() => setResultType("artists")}
         >
           Artists
         </button>
         <button
+          onClick={() => setResultType("albums")}
           className={`ml-2 border border-white border-solid rounded-xl px-2 py-1 ${
             resultType === "albums" ? "bg-white" : ""
           } ${resultType === "albums" ? "text-midnight" : "text-white"}`}
-          onClick={() => setResultType("albums")}
         >
           Albums
+        </button>
+        <button
+          onClick={() => setResultType("users")}
+          className={`ml-2 border border-white border-solid rounded-xl px-2 py-1 ${
+            resultType === "users" ? "bg-white" : ""
+          } ${resultType === "users" ? "text-midnight" : "text-white"}`}
+        >
+          Users
         </button>
       </div>
       {resultType === "artists" ? (
@@ -160,7 +234,7 @@ export default function Search({ searchParams }) {
             </div>
           )}
         </>
-      ) : (
+      ) : resultType === "albums" ? (
         <>
           {albums.length === 0 ? (
             <p className="ml-24">😔 No results were found. Please try again!</p>
@@ -168,7 +242,19 @@ export default function Search({ searchParams }) {
             <div className="grid grid-cols-6 gap-4 px-24">
               {albums.map((album) => (
                 <Card key={album.id} sx={{ width: 190, borderRadius: "5%" }}>
-                  <CardActionArea onClick={() => clickedAlbum(album.id)}>
+                  <CardActionArea
+                    onClick={() =>
+                      clickedAlbum(
+                        album.id,
+                        album.name,
+                        album.artists[0].name,
+                        album.release_date,
+                        album.images[0].url,
+                        album.label,
+                        album.total_tracks
+                      )
+                    }
+                  >
                     <CardMedia
                       component="img"
                       width="120"
@@ -200,6 +286,61 @@ export default function Search({ searchParams }) {
                   </CardActionArea>
                 </Card>
               ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {Array.isArray(users) && users.length === 0 ? (
+            <p className="ml-24">😔 No results were found. Please try again!</p>
+          ) : (
+            <div className="grid grid-cols-6 gap-4 px-24">
+              {Array.isArray(users) &&
+                users.map((user) => (
+                  <Card
+                    key={user._id.$oid}
+                    sx={{
+                      backgroundColor: "transparent",
+                      boxShadow: "none",
+                      width: 180,
+                    }}
+                  >
+                    <CardActionArea onClick={() => clickedUser(user.username)}>
+                      <CardMedia
+                        component="img"
+                        sx={{
+                          width: 180,
+                          height: 180,
+                          borderRadius: "50%",
+                        }}
+                        image={user.image || "/images/profile.png"}
+                        alt="user profile"
+                      />
+                      <CardContent>
+                        <Typography
+                          gutterBottom
+                          component="div"
+                          textAlign={"center"}
+                          fontFamily={"DM Sans"}
+                          fontWeight={600}
+                          lineHeight={0.95}
+                          color="white"
+                        >
+                          {user.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="white"
+                          textAlign={"center"}
+                          fontFamily={"DM Sans"}
+                          fontStyle={"italic"}
+                        >
+                          @{user.username}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                ))}
             </div>
           )}
         </>

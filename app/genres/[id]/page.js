@@ -76,8 +76,43 @@ export default function Genre() {
     }
   }, [accessToken]);
 
-  const clickedAlbum = (albumID) => {
-    router.replace(`/album/${albumID}`);
+  const clickedAlbum = async (
+    albumID,
+    albumName,
+    artistName,
+    releaseDate,
+    imageUrl,
+    label,
+    tracks
+  ) => {
+    try {
+      const response = await fetch("/api/saveAlbum", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId: albumID,
+          name: albumName,
+          artist: artistName,
+          released: releaseDate,
+          image: imageUrl,
+          label: label,
+          total_tracks: tracks,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save clicked album:", response.statusText);
+        return;
+      }
+
+      console.log("Album saved successfully!");
+
+      router.replace(`/album/${albumID}`);
+    } catch (error) {
+      console.error("Error saving clicked album:", error);
+    }
   };
 
   const clickedArtist = (artistID) => {
@@ -171,7 +206,19 @@ export default function Genre() {
             <div className="grid grid-cols-6 gap-4 px-24">
               {albums.map((album) => (
                 <Card key={album.id} sx={{ width: 190, borderRadius: "5%" }}>
-                  <CardActionArea onClick={() => clickedAlbum(album.id)}>
+                  <CardActionArea
+                    onClick={() =>
+                      clickedAlbum(
+                        album.id,
+                        album.name,
+                        album.artists[0].name,
+                        album.release_date,
+                        album.images[0].url,
+                        album.label,
+                        album.total_tracks
+                      )
+                    }
+                  >
                     <CardMedia
                       component="img"
                       width="120"

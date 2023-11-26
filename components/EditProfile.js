@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "antd";
 import { useSession } from "next-auth/react";
-import { get } from "mongoose";
 
 const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
   const { data: session } = useSession();
-  const [id, setId] = useState("");
+  const [user, setUser] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -13,29 +12,44 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
   const [avatar, setAvatar] = useState("");
   const [avatarPreview, setAvatarPreview] = useState("/images/profile.png");
 
-  useEffect(() => {
-    if (session) {
-      setId(session.user.id);
-      getUser();
-    }
-  }, [session]);
-
   const getUser = async () => {
-    const resGetUser = await fetch("/api/getUser", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id }),
-    });
+    const path = window.location;
+    const waht = path.toString().split("/").pop();
+    setUser(waht);
+    console.log("bolju?", waht);
 
-    const user = await resGetUser.json();
+    try {
+      const resGetUser = await fetch("/api/getUser", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: waht }),
+      });
 
-    setName(user.user.name);
-    setBio(user.user.bio);
-    setEmail(user.user.email);
-    setUsername(user.user.username);
+      if (!resGetUser.ok) {
+        console.error("Failed to fetch user data:", resGetUser.statusText);
+        return;
+      }
+
+      const userData = await resGetUser.json();
+      console.log("User data:", userData);
+
+      setName(userData.user.name);
+      setBio(userData.user.bio);
+      setEmail(userData.user.email);
+      setUsername(userData.user.username);
+      if (userData.user.image !== null) {
+        setAvatarPreview(userData.user.image);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
   };
+
+  useEffect(() => {
+    getUser();
+  }, [user]);
 
   const onChange = (e) => {
     const reader = new FileReader();
@@ -46,19 +60,39 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
       }
     };
 
-    setAvatar(e.target.files[0]);
-    reader.readAsDataURL(e.target.files[0]);
+    if (e.target.files[0]) {
+      setAvatar(e.target.files[0]);
+      reader.readAsDataURL(e.target.files[0]);
+    }
   };
 
   const submitHandler = async (e) => {
     e.preventDefault();
-
     const formData = new FormData();
-    formData.set("name", name);
-    formData.set("bio", bio);
-    formData.set("image", avatar);
+    formData.append("file", avatar);
+    formData.append("upload_preset", "sofn5e9n");
 
     try {
+      const cloudinaryResponse = await fetch(
+        "https://api.cloudinary.com/v1_1/dph5fxr7i/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      console.log("Cloudinary Response:", cloudinaryResponse);
+
+      if (!cloudinaryResponse.ok) {
+        console.error("Failed to upload image to Cloudinary");
+        return;
+      }
+
+      const cloudinaryData = await cloudinaryResponse.json();
+      console.log("Cloudinary Data:", cloudinaryData);
+
+      const avatarUrl = cloudinaryData.secure_url;
+
       const response = await fetch("/api/updateUser", {
         method: "POST",
         headers: {
@@ -68,7 +102,7 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
           username,
           name,
           bio,
-          avatar,
+          avatar: avatarUrl,
         }),
       });
 
@@ -122,6 +156,7 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
               <input
                 className="form-control block w-full px-2.5 py-1.5 text-sm font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded-xl transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none mt-4"
                 type="file"
+                name="file"
                 id="formFile"
                 onChange={onChange}
               />

@@ -7,6 +7,7 @@ import CardMedia from "@mui/material/CardMedia";
 import Typography from "@mui/material/Typography";
 import { CardActionArea } from "@mui/material";
 import { useRouter } from "next/navigation";
+import Footer from "@/components/Footer";
 
 const defaultImageUrl =
   "https://i.scdn.co/image/ab6761610000e5eb867008a971fae0f4d913f63a";
@@ -82,8 +83,43 @@ const Artist = () => {
     }
   }, [accessToken]);
 
-  const handleClickAlbum = (albumID) => {
-    router.replace(`/album/${albumID}`);
+  const handleClickAlbum = async (
+    albumID,
+    albumName,
+    artistName,
+    releaseDate,
+    imageUrl,
+    label,
+    tracks
+  ) => {
+    try {
+      const response = await fetch("/api/saveAlbum", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId: albumID,
+          name: albumName,
+          artist: artistName,
+          released: releaseDate,
+          image: imageUrl,
+          label: label,
+          total_tracks: tracks,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save clicked album:", response.statusText);
+        return;
+      }
+
+      console.log("Album saved successfully!");
+
+      router.replace(`/album/${albumID}`);
+    } catch (error) {
+      console.error("Error saving clicked album:", error);
+    }
   };
 
   const handleClickArtist = (artistID) => {
@@ -91,8 +127,8 @@ const Artist = () => {
   };
 
   return (
-    <div className="font-bold mt-32 ml-24">
-      <div className="flex justify-between">
+    <div className=" mt-32">
+      <div className="flex justify-between ml-24">
         {artist.length === 0 ? (
           <p className="ml-56"></p>
         ) : (
@@ -109,7 +145,7 @@ const Artist = () => {
             <div className="ml-4 mt-4">
               {artist ? (
                 <>
-                  <p className="text-3xl">{artist.name}</p>
+                  <p className="text-3xl font-black">{artist.name}</p>
                   <p className="ml-1 font-normal">Genres:</p>
                   <p className="ml-1 font-bold text-sky-400 cursor-default leading-4">
                     {artist.genres?.length > 0 &&
@@ -128,7 +164,7 @@ const Artist = () => {
           </div>
         )}
         <div className="mr-24">
-          <p className="text-right mb-2">Similar Artists</p>
+          <p className="text-right mb-2 font-bold">Similar Artists</p>
           <div className="grid grid-cols-4 gap-2 justify-right">
             {Array.isArray(relatedArtists) &&
               relatedArtists.slice(0, 4).map((relatedArtist) => (
@@ -178,15 +214,27 @@ const Artist = () => {
           </div>
         </div>
       </div>
-      <div className="mt-8 ml-2">
-        <p className="mb-2">{artist.name}'s Albums</p>
+      <div className="mt-8 ml-24">
+        <p className="mb-2 font-bold">{artist.name}'s Albums</p>
         {Array.isArray(albums) && albums.length === 0 ? (
           <p className="font-normal">No albums were found.</p>
         ) : (
           <div className="grid grid-cols-6 gap-4 mr-24">
             {albums?.map((album) => (
               <Card key={album.id} sx={{ width: 190, borderRadius: "5%" }}>
-                <CardActionArea onClick={() => handleClickAlbum(album.id)}>
+                <CardActionArea
+                  onClick={() =>
+                    handleClickAlbum(
+                      album.id,
+                      album.name,
+                      album.artists[0].name,
+                      album.release_date,
+                      album.images[0].url,
+                      album.label,
+                      album.total_tracks
+                    )
+                  }
+                >
                   <CardMedia
                     component="img"
                     width="120"
@@ -225,6 +273,7 @@ const Artist = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };

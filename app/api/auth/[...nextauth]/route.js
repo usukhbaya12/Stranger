@@ -33,6 +33,7 @@ const authOptions = {
             username: username,
             name: user.name,
             bio: user.bio,
+            image: user.image,
           };
         } catch (error) {
           console.log(error);
@@ -41,13 +42,9 @@ const authOptions = {
     }),
   ],
   callbacks: {
-    jwt: ({ token, user, trigger }) => {
+    jwt: ({ token, user }) => {
       if (user) {
         token.user = user;
-      }
-
-      if (trigger === "update" && session?.name) {
-        token.name = session.name;
       }
 
       return token;

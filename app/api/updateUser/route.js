@@ -13,6 +13,7 @@ export async function POST(req, res) {
         $set: {
           name: name,
           bio: bio,
+          image: avatar,
         },
       },
       { new: true }

@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import { CardActionArea } from "@mui/material";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
+import { FacebookFilled, YoutubeFilled } from "@ant-design/icons";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -89,8 +90,43 @@ export default function Home() {
     fetchGrammysAlbums();
   }, [accessToken]);
 
-  const clickedAlbum = (albumID) => {
-    router.replace(`/album/${albumID}`);
+  const clickedAlbum = async (
+    albumID,
+    albumName,
+    artistName,
+    releaseDate,
+    imageUrl,
+    label,
+    tracks
+  ) => {
+    try {
+      const response = await fetch("/api/saveAlbum", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId: albumID,
+          name: albumName,
+          artist: artistName,
+          released: releaseDate,
+          image: imageUrl,
+          label: label,
+          total_tracks: tracks,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save clicked album:", response.statusText);
+        return;
+      }
+
+      console.log("Album saved successfully!");
+
+      router.replace(`/album/${albumID}`);
+    } catch (error) {
+      console.error("Error saving clicked album:", error);
+    }
   };
 
   return (
@@ -104,13 +140,19 @@ export default function Home() {
         <h2>Save those you want to listen.</h2>
         <h2>Tell your friends what's good.</h2>
       </div>
-      <div className="flex justify-center mt-4">
+      <div className="flex justify-center mt-4 items-center">
         <img src={"/images/Stranger-PNG.png"} width={"100px"}></img>
+        <a className="ml-1" href="https://facebook.com/Strangerentnews">
+          <FacebookFilled></FacebookFilled>
+        </a>
+        <a className="ml-1" href="https://youtube.com/@StrangerTVMongolia">
+          <YoutubeFilled></YoutubeFilled>
+        </a>
       </div>
 
       <div id="NewMusic" className="container mx-auto flex justify-center mt-4">
         <Link
-          href={session ? "/profile" : "/signup"}
+          href={session ? `/user/${session.user.username}` : "/signup"}
           className="font-semibold text-white bg-green-800 hover:bg-green-900 focus:ring-green-300 rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
         >
           🎙️ Get started now.
@@ -127,7 +169,19 @@ export default function Home() {
           <div className="grid grid-cols-6 gap-10 px-24 mr-16">
             {albums.map((album) => (
               <Card key={album.id} sx={{ width: 220, borderRadius: "5%" }}>
-                <CardActionArea onClick={() => clickedAlbum(album.id)}>
+                <CardActionArea
+                  onClick={() =>
+                    clickedAlbum(
+                      album.id,
+                      album.name,
+                      album.artists[0].name,
+                      album.release_date,
+                      album.images[0].url,
+                      album.label,
+                      album.total_tracks
+                    )
+                  }
+                >
                   <CardMedia
                     component="img"
                     width="180"
@@ -268,7 +322,19 @@ export default function Home() {
                 key={album.id}
                 sx={{ width: 170, boxShadow: "none" }}
               >
-                <CardActionArea onClick={() => clickedAlbum(album.id)}>
+                <CardActionArea
+                  onClick={() =>
+                    clickedAlbum(
+                      album.id,
+                      album.name,
+                      album.artists[0].name,
+                      album.release_date,
+                      album.images[0].url,
+                      album.label,
+                      album.total_tracks
+                    )
+                  }
+                >
                   <CardMedia
                     sx={{ borderRadius: "10%" }}
                     component="img"
