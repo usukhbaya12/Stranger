@@ -8,16 +8,23 @@ import Typography from "@mui/material/Typography";
 import { CardActionArea } from "@mui/material";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
+import { StarFilled } from "@ant-design/icons";
+import { Tooltip } from "antd";
+import { useSession } from "next-auth/react";
 
 const defaultImageUrl =
   "https://i.scdn.co/image/ab6761610000e5eb867008a971fae0f4d913f63a";
 
 const Artist = () => {
+  const { data: session } = useSession();
   const [artist, setArtist] = useState([]);
+  const [localArtist, setLocalArtist] = useState([]);
   const [albums, setAlbums] = useState([]);
   const [relatedArtists, setRelatedArtists] = useState([]);
   const [accessToken, setAccessToken] = useState("");
   const router = useRouter();
+  const username = session?.user?.username;
+  const userId = session?.user?.id;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,6 +78,7 @@ const Artist = () => {
         (data) => setRelatedArtists(data.artists || [])
       );
     }
+    fetchArtistLocal();
   }, [accessToken]);
 
   useEffect(() => {
@@ -82,6 +90,31 @@ const Artist = () => {
       );
     }
   }, [accessToken]);
+
+  const fetchArtistLocal = async () => {
+    try {
+      const response = await fetch("/api/getArtist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          artistId: window.location.toString().slice(-22),
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+
+        setLocalArtist(data.data);
+      } else {
+        console.error("Failed to fetch artist:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching artist:", error);
+    }
+
+    console.log("haha", localArtist);
+  };
 
   const handleClickAlbum = async (
     albumID,
@@ -122,8 +155,67 @@ const Artist = () => {
     }
   };
 
-  const handleClickArtist = (artistID) => {
-    router.replace(`/artist/${artistID}`);
+  const handleLike = async (artistId, username) => {
+    try {
+      const response = await fetch("/api/starArtist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          artistId,
+          username,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("Artist liked successfully!");
+      } else {
+        console.error("Failed to like artist:", data.error);
+      }
+    } catch (error) {
+      console.error("Error liking artist:", error);
+    }
+    fetchArtistLocal();
+  };
+
+  const handleClickArtist = async (
+    artistID,
+    name,
+    popularity,
+    imageUrl,
+    followers,
+    genres
+  ) => {
+    try {
+      const response = await fetch("/api/saveArtist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          artistID: artistID,
+          name: name,
+          popularity: popularity,
+          imageUrl: imageUrl,
+          followers: followers,
+          genres: genres,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save clicked artist:", response.statusText);
+        return;
+      }
+
+      console.log("Artist saved successfully!");
+
+      router.replace(`/artist/${artistID}`);
+    } catch (error) {
+      console.error("Error saving clicked album:", error);
+    }
   };
 
   return (
@@ -145,7 +237,31 @@ const Artist = () => {
             <div className="ml-4 mt-4">
               {artist ? (
                 <>
-                  <p className="text-3xl font-black">{artist.name}</p>
+                  <div className="flex">
+                    <p className="text-3xl font-black mr-2">{artist.name}</p>
+                    <Tooltip
+                      title={
+                        localArtist &&
+                        localArtist.starred &&
+                        localArtist.starred.includes(username)
+                          ? "Click to remove from your favorite artists."
+                          : `Click the star button to add ${artist.name} to your favorite artists.`
+                      }
+                    >
+                      <StarFilled
+                        style={{
+                          color:
+                            localArtist &&
+                            localArtist.starred &&
+                            localArtist.starred.includes(username)
+                              ? "gold"
+                              : "white",
+                        }}
+                        onClick={() => handleLike(artist.id, username)}
+                      />
+                    </Tooltip>
+                  </div>
+
                   <p className="ml-1 font-normal">Genres:</p>
                   <p className="ml-1 font-bold text-sky-400 cursor-default leading-4">
                     {artist.genres?.length > 0 &&
@@ -177,7 +293,16 @@ const Artist = () => {
                   }}
                 >
                   <CardActionArea
-                    onClick={() => handleClickArtist(relatedArtist.id)}
+                    onClick={() =>
+                      handleClickArtist(
+                        relatedArtist.id,
+                        relatedArtist.name,
+                        relatedArtist.popularity,
+                        relatedArtist.images[0].url,
+                        relatedArtist.followers.total,
+                        relatedArtist.genres
+                      )
+                    }
                   >
                     <CardMedia
                       component="img"

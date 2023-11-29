@@ -29,8 +29,8 @@ const albumSchema = new Schema({
       comment: String,
       rating: Number,
       date: { type: Date, default: Date.now },
-      liked: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
-      disliked: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
+      liked: [{ type: String }],
+      disliked: [{ type: String }],
     },
   ],
 });

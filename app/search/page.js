@@ -140,8 +140,43 @@ export default function Search({ searchParams }) {
     }
   };
 
-  const clickedArtist = (artistID) => {
-    router.replace(`/artist/${artistID}`);
+  console.log(artists);
+
+  const clickedArtist = async (
+    artistID,
+    name,
+    popularity,
+    imageUrl,
+    followers,
+    genres
+  ) => {
+    try {
+      const response = await fetch("/api/saveArtist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          artistID: artistID,
+          name: name,
+          popularity: popularity,
+          imageUrl: imageUrl,
+          followers: followers,
+          genres: genres,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save clicked artist:", response.statusText);
+        return;
+      }
+
+      console.log("Artist saved successfully!");
+
+      router.replace(`/artist/${artistID}`);
+    } catch (error) {
+      console.error("Error saving clicked album:", error);
+    }
   };
 
   const clickedUser = (username) => {
@@ -191,7 +226,18 @@ export default function Search({ searchParams }) {
                     width: 180,
                   }}
                 >
-                  <CardActionArea onClick={() => clickedArtist(artist.id)}>
+                  <CardActionArea
+                    onClick={() =>
+                      clickedArtist(
+                        artist.id,
+                        artist.name,
+                        artist.popularity,
+                        artist.images[0].url,
+                        artist.followers.total,
+                        artist.genres
+                      )
+                    }
+                  >
                     <CardMedia
                       component="img"
                       sx={{

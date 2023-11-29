@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button, Form, Tooltip } from "antd";
 import Footer from "@/components/Footer";
-import { LikeOutlined, DislikeOutlined } from "@ant-design/icons";
+import { LikeFilled, DislikeFilled } from "@ant-design/icons";
 
 export default function Album() {
   const { data: session } = useSession();
@@ -27,8 +27,7 @@ export default function Album() {
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
   const [reviewers, setReviewers] = useState([]);
   const [pics, setPics] = useState([]);
-  const [likedReviews, setLikedReviews] = useState([]);
-  const [dislikedReviews, setDislikedReviews] = useState([]);
+  const [topAlbums, setTopAlbums] = useState([]);
   const username = session?.user?.username;
 
   useEffect(() => {
@@ -62,7 +61,13 @@ export default function Album() {
   useEffect(() => {
     fetchReviewData();
     fetchAllReviews();
+    fetchTopAlbums();
   }, [accessToken, username]);
+
+  useEffect(() => {
+    fetchReviewData();
+    fetchAllReviews();
+  }, []);
 
   useEffect(() => {
     showFollowersModal();
@@ -138,8 +143,6 @@ export default function Album() {
         const data = await response.json();
         if (data.success) {
           setAllReviews(data.data);
-          setLikedReviews(data.data.liked || []);
-          setDislikedReviews(data.data.disliked || []);
           const usernames = data.data.map((item) => item.username);
           setReviewers(usernames);
         } else {
@@ -177,6 +180,25 @@ export default function Album() {
     }
   };
 
+  const fetchTopAlbums = async () => {
+    try {
+      const response = await fetch("/api/getTopAlbums");
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setTopAlbums(data.data);
+        } else {
+          console.error("Failed to fetch top albums:", data.error);
+        }
+      } else {
+        console.error("Failed to fetch top albums:");
+      }
+    } catch (error) {
+      console.error("Error fetching top albums:", error);
+    }
+  };
+
   const formatDuration = (durationMs) => {
     const minutes = Math.floor(durationMs / 60000);
     const seconds = ((durationMs % 60000) / 1000).toFixed(0);
@@ -204,6 +226,7 @@ export default function Album() {
     setInfoModalVisible(false);
     fetchReviewData();
     fetchAllReviews();
+    fetchTopAlbums();
   };
 
   const okButtonProps = {
@@ -274,6 +297,7 @@ export default function Album() {
     }
     setIsFollowingModalOpen(false);
     fetchAllReviews();
+    fetchTopAlbums();
   };
 
   const calculateAverageRating = (reviews) => {
@@ -295,6 +319,95 @@ export default function Album() {
   pics.forEach((pic) => {
     userImages[pic.username] = pic.image;
   });
+
+  const handleLike = async (albumId, reviewId, username) => {
+    try {
+      const response = await fetch("/api/likeReview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId,
+          reviewId,
+          username,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("Review liked successfully!");
+      } else {
+        console.error("Failed to like review:", data.error);
+      }
+    } catch (error) {
+      console.error("Error liking review:", error);
+    }
+
+    fetchAllReviews();
+  };
+
+  const handleDislike = async (albumId, reviewId, username) => {
+    try {
+      const response = await fetch("/api/dislikeReview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          albumId,
+          reviewId,
+          username,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log("Review disliked successfully!");
+      } else {
+        console.error("Failed to dislike review:", data.error);
+      }
+    } catch (error) {
+      console.error("Error disliking review:", error);
+    }
+    fetchAllReviews();
+  };
+
+  const getTooltipTextLiked = (usernames) => {
+    if (usernames.length === 0) {
+      return "Like";
+    }
+    return usernames.join(", ");
+  };
+
+  const getTooltipTextDisliked = (usernames) => {
+    if (usernames.length === 0) {
+      return "Dislike";
+    }
+    return usernames.join(", ");
+  };
+
+  const handleUserRoute = (userroute) => {
+    router.replace(`/user/${userroute}`);
+  };
+
+  const albumIndex = topAlbums.findIndex(
+    (topAlbum) => topAlbum._id === album.id
+  );
+
+  const albumYear = new Date(album.release_date).getFullYear();
+
+  const filteredAlbums = albumYear
+    ? topAlbums.filter((topAlbum) => {
+        return topAlbum.released.slice(0, 4) === albumYear.toString();
+      })
+    : topAlbums;
+
+  const albumIndexYear = filteredAlbums.findIndex(
+    (filteredAlbum) => filteredAlbum._id === album.id
+  );
 
   return (
     <div className="mt-72">
@@ -384,38 +497,6 @@ export default function Album() {
                 {album.artists?.[0]?.name || "Unknown Artist"}
               </Typography>
 
-              <div
-                style={{
-                  color: "white",
-                  fontWeight: "400",
-                  marginTop: "4px",
-                  marginLeft: "20px",
-                  fontSize: "14px",
-                  lineHeight: "1.2",
-                  height: "123px",
-                  maxWidth: "420px",
-                  overflowX: "auto",
-                  overflowY: "scroll",
-                  background: "rgb(31 41 55)",
-                  border: "white solid 1px",
-                  borderRadius: "10px",
-                  padding: "5px",
-                }}
-              >
-                <table>
-                  <tbody>
-                    {album.tracks?.items.map((track, index) => (
-                      <tr key={track.id}>
-                        <td className="text-center">{index + 1}</td>
-                        <td className="pl-2">
-                          <strong>{track.name}</strong>{" "}
-                          {formatDuration(track.duration_ms)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
               <table
                 style={{
                   color: "white",
@@ -481,14 +562,58 @@ export default function Album() {
                         marginLeft={2}
                         fontSize={16}
                       >
-                        #1 for 2017, #5 for overall
+                        <span className="font-black">
+                          #{albumIndexYear + 1}
+                        </span>{" "}
+                        for{" "}
+                        <span className="font-semibold cursor-pointer text-sky-400">
+                          {new String(album.release_date).slice(0, 4)}
+                        </span>
+                        , <span className="font-black">#{albumIndex + 1}</span>{" "}
+                        for{" "}
+                        <span className="font-semibold cursor-pointer text-sky-400">
+                          overall
+                        </span>
                       </Typography>
                     </td>
                   </tr>
                 </tbody>
               </table>
+              <div
+                style={{
+                  color: "white",
+                  fontWeight: "400",
+                  marginTop: "10px",
+                  marginLeft: "20px",
+                  fontSize: "14px",
+                  lineHeight: "1.2",
+                  height: "123px",
+                  maxWidth: "420px",
+                  overflowX: "auto",
+                  overflowY: "scroll",
+                  background: "rgb(31 41 55)",
+                  border: "white solid 1px",
+                  borderRadius: "10px",
+                  padding: "5px",
+                }}
+              >
+                <table>
+                  <tbody>
+                    {album.tracks?.items.map((track, index) => (
+                      <tr key={track.id}>
+                        <td className="text-center">{index + 1}</td>
+                        <td className="pl-2">
+                          <strong>{track.name}</strong>{" "}
+                          {formatDuration(track.duration_ms)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+
           {userReview && (
             <div>
               <p className="text-center font-semibold">Your rating</p>
@@ -524,6 +649,7 @@ export default function Album() {
                   style={{
                     width: "40px",
                     height: "40px",
+                    objectFit: "cover",
                     borderRadius: "50%",
                   }}
                   src={userImages[username] || "/images/profile.png"}
@@ -681,14 +807,21 @@ export default function Album() {
                         style={{
                           width: "40px",
                           height: "40px",
+                          objectFit: "cover",
                           borderRadius: "50%",
                         }}
                         src={
                           userImages[review.username] || "/images/profile.png"
                         }
+                        onClick={() => handleUserRoute(review.username)}
                       />
                       <div className="ml-2 leading-5 font-normal">
-                        <p className="cursor-pointer">@{review.username}</p>
+                        <p
+                          onClick={() => handleUserRoute(review.username)}
+                          className="cursor-pointer"
+                        >
+                          @{review.username}
+                        </p>
                         <Rate
                           allowHalf
                           defaultValue={review.rating}
@@ -701,33 +834,47 @@ export default function Album() {
                         />
                       </div>
                       <div className="ml-4 flex items-center">
-                        <Tooltip title="Like">
-                          <LikeOutlined
+                        <Tooltip title={getTooltipTextLiked(review.liked)}>
+                          <LikeFilled
                             style={{
-                              color: likedReviews.includes(review._id)
-                                ? "green"
+                              color: review.liked.includes(username)
+                                ? "darkseagreen"
                                 : "white",
                             }}
-                            onClick={() => handleLike(review._id)}
+                            onClick={() =>
+                              handleLike(album.id, review._id, username)
+                            }
                           />
                         </Tooltip>
-                        <p>{review.likes}</p>
-                        <Tooltip title="Dislike">
-                          <DislikeOutlined
+                        <p className="px-2 text-sm font-semibold">
+                          {review.liked.length - review.disliked.length}
+                        </p>
+                        <Tooltip
+                          title={getTooltipTextDisliked(review.disliked)}
+                        >
+                          <DislikeFilled
                             style={{
-                              color: dislikedReviews.includes(review._id)
+                              color: review.disliked.includes(username)
                                 ? "red"
                                 : "white",
                             }}
-                            onClick={() => handleDislike(review._id)}
+                            onClick={() =>
+                              handleDislike(album.id, review._id, username)
+                            }
                           />
                         </Tooltip>
-                        <p>{review.dislikes}</p>
                       </div>
                     </div>
                     <div className="ml-[58px] mt-2">
-                      <p className="font-semibold">{review.title}</p>
-                      <p>{review.comment}</p>
+                      <div className="flex items-center">
+                        <p className="font-semibold">{review.title} </p>
+                        <span className="text-sm px-2">{" • "}</span>
+                        <p className="text-xs font-semibold text-gray-400">
+                          {new Date(review.date).toDateString().slice(-11)}
+                        </p>
+                      </div>
+
+                      <p className="mr-8 text-justify">{review.comment}</p>
                     </div>
                   </li>
                 ))}

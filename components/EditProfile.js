@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal } from "antd";
+import { Modal, ConfigProvider } from "antd";
 import { useSession } from "next-auth/react";
 
 const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
@@ -128,86 +128,113 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
       borderColor: "sky",
     },
   };
+  const cancelButtonProps = {
+    style: {
+      color: "#4096FF",
+      borderColor: "sky",
+      marginRight: "8px",
+    },
+  };
 
   return (
     <>
-      <Modal
-        title="Edit Profile"
-        open={isModalOpen}
-        onOk={submitHandler}
-        onCancel={handleCancel}
-        width={380}
-        okButtonProps={okButtonProps}
+      <ConfigProvider
+        theme={{
+          components: {
+            Modal: {
+              titleColor: "black",
+              colorText: "black",
+            },
+          },
+          token: {
+            colorTextPlaceholder: "rgb(180, 180, 180)",
+            fontFamily: "DM Sans",
+            colorBgContainer: "rgba(31,41,55,255)",
+            colorText: "rgba(255,255,255)",
+            colorFillContent: "rgba(255,255,255, 0.4)",
+            marginXS: "6",
+          },
+        }}
       >
-        <form>
-          <div className="justify-center">
-            <div className="input-type flex justify-center">
-              <img
-                src={avatarPreview}
-                style={{
-                  borderRadius: "50%",
-                  width: "120px",
-                  height: "120px",
-                  objectFit: "cover",
-                }}
-              ></img>
+        <Modal
+          title="Edit Profile"
+          open={isModalOpen}
+          onOk={submitHandler}
+          onCancel={handleCancel}
+          width={380}
+          okButtonProps={okButtonProps}
+          cancelButtonProps={cancelButtonProps}
+        >
+          <form>
+            <div className="justify-center">
+              <div className="input-type flex justify-center">
+                <img
+                  src={avatarPreview}
+                  style={{
+                    borderRadius: "50%",
+                    width: "120px",
+                    height: "120px",
+                    objectFit: "cover",
+                  }}
+                ></img>
+              </div>
+              <div className="md:w-2/3 lg:w-80">
+                <input
+                  className="form-control block w-full px-2.5 py-1.5 text-sm font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded-xl transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none mt-4"
+                  type="file"
+                  name="file"
+                  id="formFile"
+                  onChange={onChange}
+                />
+              </div>
             </div>
-            <div className="md:w-2/3 lg:w-80">
+            <div className="input-type flex items-center mb-2 mt-4">
+              <p className="w-3/12">Username:</p>
               <input
-                className="form-control block w-full px-2.5 py-1.5 text-sm font-normal text-gray-700 bg-white bg-clip-padding border border-solid border-gray-300 rounded-xl transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-blue-600 focus:outline-none mt-4"
-                type="file"
-                name="file"
-                id="formFile"
-                onChange={onChange}
+                disabled
+                type="text"
+                className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
+                name="username"
+                placeholder={username}
               />
             </div>
-          </div>
-          <div className="input-type flex items-center mb-2 mt-4">
-            <p className="w-3/12">Username:</p>
-            <input
-              disabled
-              type="text"
-              className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
-              name="username"
-              placeholder={username}
-            />
-          </div>
-          <div className="input-type flex items-center mb-2">
-            <p className="w-3/12">E-mail:</p>
-            <input
-              disabled
-              type="email"
-              className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
-              name="email"
-              placeholder={email}
-            />
-          </div>
-          <div className="input-type flex items-center mb-2">
-            <p className="w-3/12">Full name:</p>
-            <input
-              required
-              type="text"
-              className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
-              name="name"
-              value={name}
-              placeholder="Full name"
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="input-type flex items-center">
-            <p className="w-3/12">Bio:</p>
-            <input
-              required
-              type="text"
-              className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
-              name="bio"
-              value={bio}
-              placeholder="Your bio..."
-              onChange={(e) => setBio(e.target.value)}
-            />
-          </div>
-        </form>
-      </Modal>
+            <div className="input-type flex items-center mb-2">
+              <p className="w-3/12">E-mail:</p>
+              <input
+                disabled
+                type="email"
+                className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
+                name="email"
+                placeholder={email}
+              />
+            </div>
+            <div className="input-type flex items-center mb-2">
+              <p className="w-3/12">Full name:</p>
+              <input
+                required
+                type="text"
+                className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
+                name="name"
+                value={name}
+                placeholder="Full name"
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="input-type flex items-center">
+              <p className="w-3/12">Bio:</p>
+              <input
+                required
+                type="text"
+                className="w-9/12 border px-3 py-1.5 focus:outline-none rounded-md"
+                name="bio"
+                value={bio}
+                placeholder="Your bio..."
+                onChange={(e) => setBio(e.target.value)}
+              />
+            </div>
+          </form>
+        </Modal>
+      </ConfigProvider>
     </>
   );
 };
