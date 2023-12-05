@@ -426,6 +426,81 @@ export default function Album() {
     setIsPromoModalOpen(false);
   };
 
+  useEffect(() => {
+    const calculateChartData = () => {
+      const data = [0, 0, 0, 0, 0];
+
+      allReviews.forEach((review) => {
+        const rating = review.rating;
+        if (rating >= 0 && rating <= 1) {
+          data[0]++;
+        } else if (rating > 1 && rating <= 2) {
+          data[1]++;
+        } else if (rating > 2 && rating <= 3) {
+          data[2]++;
+        } else if (rating > 3 && rating <= 4) {
+          data[3]++;
+        } else if (rating > 4 && rating <= 5) {
+          data[4]++;
+        }
+      });
+
+      return data;
+    };
+
+    const drawChart = () => {
+      const canvas = document.getElementById("albumChart");
+      const ctx = canvas.getContext("2d");
+
+      // Clear previous chart
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const chartData = calculateChartData();
+      const barHeight = 30;
+      const maxBarWidth = 140;
+      const margin = 5; // Adjust the margin as needed
+
+      chartData.forEach((value, index) => {
+        const y = index * (barHeight + margin);
+
+        // Draw the label (star range) with "DM Sans" font
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px 'DM Sans'";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${index}-${index + 1} ⭐️`, 10, y + barHeight / 2);
+
+        // Draw the bar
+        ctx.fillStyle = "rgba(75, 192, 192, 0.2)";
+        ctx.fillRect(
+          70,
+          y,
+          (value / Math.max(...chartData)) * maxBarWidth,
+          barHeight
+        );
+
+        // Draw the bar border
+        ctx.strokeStyle = "rgba(75, 192, 192, 1)";
+        ctx.strokeRect(
+          70,
+          y,
+          (value / Math.max(...chartData)) * maxBarWidth,
+          barHeight
+        );
+
+        // Draw the count on the right side of the bar
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px 'DM Sans'";
+        ctx.fillText(
+          value,
+          70 + (value / Math.max(...chartData)) * maxBarWidth + 10,
+          y + barHeight / 2
+        );
+      });
+    };
+
+    drawChart();
+  }, [allReviews]);
+
   return (
     <div className="mt-72 select-none">
       <ConfigProvider
@@ -607,9 +682,11 @@ export default function Album() {
                             </a>
                             ,{" "}
                             <span className="font-black">
-                              #{albumIndex + 1}
+                              #{albumIndex + 1}{" "}
+                              <span className="font-normal">
+                                of {topAlbums.length}
+                              </span>
                             </span>{" "}
-                            for{" "}
                             <a
                               className="font-semibold cursor-pointer text-sky-400"
                               href="/rankings"
@@ -945,7 +1022,13 @@ export default function Album() {
             >
               Explore {album.name} 🎧
             </p>
-            <p className="text-center mt-1">Listen on </p>
+            <canvas
+              id="albumChart"
+              width={240}
+              height={200}
+              className="mt-4 ml-2"
+            ></canvas>
+            <p className="text-center -mt-3">Listen on </p>
             <div className="flex justify-center items-center">
               <a href={`https://open.spotify.com/album/${album.id}`}>
                 <img

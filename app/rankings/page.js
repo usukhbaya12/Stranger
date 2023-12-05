@@ -119,7 +119,13 @@ const Rankings = () => {
           ]}
         />
       </div>
-      <p className="ml-24 mt-1">🪩 Our finests of all-time.</p>
+      <div className="ml-24 mt-1 flex items-center">
+        <p className="text-5xl">🎨</p>
+        <div className="leading-5 ml-2">
+          <p>Our finests of all-time.</p>
+          <p>Total {filteredAlbums.length} albums</p>
+        </div>
+      </div>
 
       {filteredAlbums.length > 0 ? (
         <div className="mt-4 px-24">

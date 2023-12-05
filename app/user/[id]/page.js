@@ -386,7 +386,7 @@ export default function Profile() {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const reviewsPerPage = 3;
+  const reviewsPerPage = 5;
 
   const indexOfLastReview = currentPage * reviewsPerPage;
   const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
@@ -413,6 +413,106 @@ export default function Profile() {
 
   const handleClosePromoModal = () => {
     setIsPromoModalOpen(false);
+  };
+
+  useEffect(() => {
+    const calculateChartData = () => {
+      const data = [0, 0, 0, 0, 0];
+
+      reviews.forEach((review) => {
+        const rating = review.reviews[0].rating;
+        if (rating >= 0 && rating <= 1) {
+          data[0]++;
+        } else if (rating > 1 && rating <= 2) {
+          data[1]++;
+        } else if (rating > 2 && rating <= 3) {
+          data[2]++;
+        } else if (rating > 3 && rating <= 4) {
+          data[3]++;
+        } else if (rating > 4 && rating <= 5) {
+          data[4]++;
+        }
+      });
+
+      return data;
+    };
+
+    const drawChart = () => {
+      const canvas = document.getElementById("albumChart");
+      const ctx = canvas.getContext("2d");
+
+      // Clear previous chart
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const chartData = calculateChartData();
+      const barHeight = 30;
+      const maxBarWidth = 350;
+      const margin = 5; // Adjust the margin as needed
+
+      chartData.forEach((value, index) => {
+        const y = index * (barHeight + margin);
+
+        // Draw the label (star range) with "DM Sans" font
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px 'DM Sans'";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`${index}-${index + 1} ⭐️`, 10, y + barHeight / 2);
+
+        // Draw the bar
+        ctx.fillStyle = "rgba(75, 192, 192, 0.2)";
+        ctx.fillRect(
+          70,
+          y,
+          (value / Math.max(...chartData)) * maxBarWidth,
+          barHeight
+        );
+
+        // Draw the bar border
+        ctx.strokeStyle = "rgba(75, 192, 192, 1)";
+        ctx.strokeRect(
+          70,
+          y,
+          (value / Math.max(...chartData)) * maxBarWidth,
+          barHeight
+        );
+
+        // Draw the count on the right side of the bar
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px 'DM Sans'";
+        ctx.fillText(
+          value,
+          70 + (value / Math.max(...chartData)) * maxBarWidth + 10,
+          y + barHeight / 2
+        );
+      });
+    };
+
+    drawChart();
+  }, [reviews]);
+
+  const calculateAverageRating = () => {
+    if (reviews.length === 0) {
+      return 0;
+    }
+
+    const totalRating = reviews.reduce(
+      (sum, review) => sum + review.reviews[0].rating,
+      0
+    );
+    const averageRating = totalRating / reviews.length;
+
+    return averageRating.toFixed(2);
+  };
+
+  const calculatePerfectScore = () => {
+    if (reviews.length === 0) {
+      return 0;
+    }
+
+    const fiveStarReviews = reviews.filter(
+      (review) => review.reviews[0].rating === 5
+    );
+    return ((fiveStarReviews.length / reviews.length) * 100).toFixed(1);
   };
 
   return (
@@ -741,7 +841,6 @@ export default function Profile() {
                           .slice(-11)}
                       </p>
                     </div>
-                    {console.log(userImages["usukhu"])}
                     <div
                       className="z-10 hover:bg-sky-400 px-2 py-1 rounded-full"
                       onClick={(e) => showPromo(e, review)}
@@ -758,19 +857,38 @@ export default function Profile() {
                 </p>
                 <div className="ml-4 flex items-center space-x-2">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-2 py-0.5 rounded text-sm font-semibold ${
-                          page === currentPage
-                            ? "bg-gray-700 text-white"
-                            : "bg-white text-black"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    )
+                    (page) => {
+                      // Calculate the difference between the current page and the clicked page
+                      const difference = Math.abs(page - currentPage);
+
+                      // Show only a limited number of buttons around the current page
+                      if (
+                        difference <= 1 ||
+                        page === 1 ||
+                        page === totalPages
+                      ) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`px-2 py-0.5 rounded text-sm font-semibold ${
+                              page === currentPage
+                                ? "bg-gray-700 text-white"
+                                : "bg-white text-black"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      }
+
+                      // Show ellipsis for pages not within the limited range
+                      if (difference === 2) {
+                        return <span key={`ellipsis-${page}`}>..</span>;
+                      }
+
+                      return null;
+                    }
                   )}
                 </div>
               </div>
@@ -779,7 +897,56 @@ export default function Profile() {
             <p>{user} has not reviewed any albums yet.</p>
           )}
         </div>
-        <div className="mt-4 ml-24">
+        <div className="mt-4 px-24">
+          <p className="font-bold text-xl">🍾 User Breakdown</p>
+          <div className="flex justify-between items-center">
+            <canvas
+              id="albumChart"
+              width={500}
+              height={200}
+              className="mt-4 ml-2"
+            ></canvas>
+            <div className="flex">
+              <div className="px-6 items-center leading-4 text-center text-sm">
+                <div className="w-[150px] h-[150px] bg-sky-400 rounded-full p-4 px-8">
+                  <p className="mt-2">
+                    <span className="font-semibold">{username}</span>
+                    <br></br>reviewed
+                  </p>
+                  <p className="text-4xl font-black">{reviews.length}</p>
+                  <p>
+                    albums<br></br>in total
+                  </p>
+                </div>
+              </div>
+              <div className="px-6 items-center leading-4 text-center text-sm">
+                <div className="w-[150px] h-[150px] bg-sky-500 rounded-full p-4 px-8 -ml-6">
+                  <p className="mt-2">
+                    <span className="font-semibold">{username}</span>
+                    <br></br>gave an<br></br>average of
+                  </p>
+                  <p className="text-4xl font-black">
+                    {calculateAverageRating()}
+                  </p>
+                  <p>score</p>
+                </div>
+              </div>
+              <div className="px-6 items-center leading-4 text-center text-sm">
+                <div className="w-[150px] h-[150px] bg-sky-600 rounded-full p-4 px-8 -ml-6">
+                  <p className="mt-2">
+                    <span className="font-semibold">{username}</span>
+                    <br></br>gave 5⭐️'s to
+                  </p>
+                  <p className="text-4xl font-black">
+                    {calculatePerfectScore()}%
+                  </p>
+                  <p>of reviewed albums</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="ml-24">
           <p className="font-bold text-xl">🙌 Liked Reviews</p>
           {likedReviews.length > 0 ? (
             <div
@@ -790,7 +957,7 @@ export default function Profile() {
                 <div
                   key={review.likedReview._id}
                   className="border border-white rounded-2xl p-3 hover:bg-gray-700 cursor-pointer"
-                  style={{ minWidth: "200px" }}
+                  style={{ minWidth: "220px" }}
                   onClick={() => clickedAlbum(review._id)}
                 >
                   <div className="flex flex-col items-center ">
@@ -810,13 +977,13 @@ export default function Profile() {
                       <p className="font-semibold text-center mt-1">
                         @{review.likedReview.username}
                       </p>
-                      <div className="flex flex-col  items-center mt-2 mb-2 bg-gray-700 pr-2 rounded-md">
-                        <div className="flex items-center">
+                      <div className="flex flex-col items-center mt-2 mb-2 bg-gray-700 pr-2 rounded-md">
+                        <div className="flex items-center flex-shrink-0">
                           <img
                             src={review.image}
                             style={{ width: "32px", borderRadius: "10%" }}
                           ></img>
-                          <div className="leading-4 ml-2">
+                          <div className="leading-4 ml-2 flex-shrink-0 no-wrap">
                             <p className="font-semibold text-xs">
                               {review.name}
                             </p>
@@ -825,7 +992,9 @@ export default function Profile() {
                         </div>
                       </div>
                       <div className="text-center">
-                        <p>{review.likedReview.title}</p>
+                        <p className="text-sm font-semibold">
+                          {review.likedReview.title}
+                        </p>
                         <Rate
                           allowHalf
                           defaultValue={review?.likedReview.rating}
