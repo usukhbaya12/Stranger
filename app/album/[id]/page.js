@@ -6,8 +6,13 @@ import { Rate, Input, ConfigProvider, Modal } from "antd";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button, Form, Tooltip } from "antd";
+import ShareCard from "@/components/ShareCard";
 import Footer from "@/components/Footer";
-import { LikeFilled, DislikeFilled } from "@ant-design/icons";
+import {
+  LikeFilled,
+  DislikeFilled,
+  ThunderboltFilled,
+} from "@ant-design/icons";
 
 export default function Album() {
   const { data: session } = useSession();
@@ -28,6 +33,10 @@ export default function Album() {
   const [reviewers, setReviewers] = useState([]);
   const [pics, setPics] = useState([]);
   const [topAlbums, setTopAlbums] = useState([]);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [promoAlbum, setPromoAlbum] = useState(null);
+  const [userImage, setUserImage] = useState(null);
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const username = session?.user?.username;
 
   useEffect(() => {
@@ -60,14 +69,12 @@ export default function Album() {
 
   useEffect(() => {
     fetchReviewData();
-    fetchAllReviews();
     fetchTopAlbums();
   }, [accessToken, username]);
 
   useEffect(() => {
-    fetchReviewData();
     fetchAllReviews();
-  }, []);
+  }, [album]);
 
   useEffect(() => {
     showFollowersModal();
@@ -92,7 +99,6 @@ export default function Album() {
       );
       const data = await response.json();
       setAlbum(data);
-      console.log(data);
 
       if (username && data.id) {
         const reviewResponse = await fetch("/api/getUserReview", {
@@ -409,8 +415,19 @@ export default function Album() {
     (filteredAlbum) => filteredAlbum._id === album.id
   );
 
+  const showPromo = (review, userImage, album) => {
+    setUserImage(userImage);
+    setSelectedReview(review);
+    setIsPromoModalOpen(true);
+    setPromoAlbum(album);
+  };
+
+  const handleClosePromo = () => {
+    setIsPromoModalOpen(false);
+  };
+
   return (
-    <div className="mt-72">
+    <div className="mt-72 select-none">
       <ConfigProvider
         theme={{
           components: {
@@ -427,6 +444,13 @@ export default function Album() {
           },
         }}
       >
+        <ShareCard
+          isModalOpen={isPromoModalOpen}
+          onClose={handleClosePromo}
+          selectedReview={selectedReview}
+          userImage={userImage}
+          promoAlbum={promoAlbum}
+        />
         <div
           style={{
             position: "absolute",
@@ -542,14 +566,21 @@ export default function Album() {
                         marginLeft={2}
                         fontSize={16}
                       >
-                        <span className="text-sky-400 font-black text-xl">
-                          {averageRating.toFixed(2)}
-                        </span>{" "}
-                        / 5.0 from{" "}
-                        <span className="text-gray-400">
-                          <span className="font-bold">{totalRatings}</span>{" "}
-                          ratings
-                        </span>
+                        {" "}
+                        {totalRatings > 0 ? (
+                          <>
+                            <span className="text-sky-400 font-black text-xl">
+                              {averageRating.toFixed(2)}
+                            </span>{" "}
+                            / 5.0 from{" "}
+                            <span className="text-gray-400">
+                              <span className="font-bold">{totalRatings}</span>{" "}
+                              ratings
+                            </span>
+                          </>
+                        ) : (
+                          <span className="font-medium">N/A</span>
+                        )}
                       </Typography>
                     </td>
                   </tr>
@@ -562,18 +593,33 @@ export default function Album() {
                         marginLeft={2}
                         fontSize={16}
                       >
-                        <span className="font-black">
-                          #{albumIndexYear + 1}
-                        </span>{" "}
-                        for{" "}
-                        <span className="font-semibold cursor-pointer text-sky-400">
-                          {new String(album.release_date).slice(0, 4)}
-                        </span>
-                        , <span className="font-black">#{albumIndex + 1}</span>{" "}
-                        for{" "}
-                        <span className="font-semibold cursor-pointer text-sky-400">
-                          overall
-                        </span>
+                        {albumIndex !== -1 ? (
+                          <>
+                            <span className="font-black">
+                              #{albumIndexYear + 1}
+                            </span>{" "}
+                            for{" "}
+                            <a
+                              className="font-semibold cursor-pointer text-sky-400"
+                              href="/rankings"
+                            >
+                              {new String(album.release_date).slice(0, 4)}
+                            </a>
+                            ,{" "}
+                            <span className="font-black">
+                              #{albumIndex + 1}
+                            </span>{" "}
+                            for{" "}
+                            <a
+                              className="font-semibold cursor-pointer text-sky-400"
+                              href="/rankings"
+                            >
+                              overall
+                            </a>
+                          </>
+                        ) : (
+                          <span className="font-medium">Not reviewed yet</span>
+                        )}
                       </Typography>
                     </td>
                   </tr>
@@ -637,7 +683,7 @@ export default function Album() {
                 / 5.0
               </p>
               <p className="text-sm font-normal text-center mt-4 -mb-2">
-                Click below to see your review.
+                👇 Click below to modify your review.
               </p>
               <div
                 onClick={showFollowingModal}
@@ -863,6 +909,17 @@ export default function Album() {
                             }
                           />
                         </Tooltip>
+                        <span className="text-sm px-4">{" • "}</span>
+                        <ThunderboltFilled
+                          className="cursor-pointer"
+                          onClick={() =>
+                            showPromo(
+                              review,
+                              userImages[review.username],
+                              album
+                            )
+                          }
+                        />
                       </div>
                     </div>
                     <div className="ml-[58px] mt-2">

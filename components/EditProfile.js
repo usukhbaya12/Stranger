@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, ConfigProvider } from "antd";
-import { useSession } from "next-auth/react";
 
 const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
-  const { data: session } = useSession();
   const [user, setUser] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -16,7 +14,6 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
     const path = window.location;
     const waht = path.toString().split("/").pop();
     setUser(waht);
-    console.log("bolju?", waht);
 
     try {
       const resGetUser = await fetch("/api/getUser", {
@@ -137,7 +134,7 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
   };
 
   return (
-    <>
+    <div className="select-none">
       <ConfigProvider
         theme={{
           components: {
@@ -235,7 +232,7 @@ const EditProfile = ({ isModalOpen, onClose, onProfileUpdate }) => {
           </form>
         </Modal>
       </ConfigProvider>
-    </>
+    </div>
   );
 };
 

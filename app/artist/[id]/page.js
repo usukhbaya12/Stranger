@@ -219,7 +219,7 @@ const Artist = () => {
   };
 
   return (
-    <div className=" mt-32">
+    <div className=" mt-32 select-none">
       <div className="flex justify-between ml-24">
         {artist.length === 0 ? (
           <p className="ml-56"></p>

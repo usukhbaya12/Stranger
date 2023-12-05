@@ -6,8 +6,14 @@ import EditProfile from "@/components/EditProfile";
 import Modal from "antd/es/modal/Modal";
 import { useRouter } from "next/navigation";
 import { Rate, ConfigProvider } from "antd";
-import { LikeFilled, DislikeFilled, CalendarFilled } from "@ant-design/icons";
+import {
+  LikeFilled,
+  DislikeFilled,
+  CalendarFilled,
+  ThunderboltFilled,
+} from "@ant-design/icons";
 import Footer from "@/components/Footer";
+import GenerateImage from "@/components/GenerateImage";
 
 export default function Profile() {
   const { data: session } = useSession();
@@ -36,21 +42,21 @@ export default function Profile() {
   const [likedReviews, setLikedReviews] = useState([]);
   const [reviewers, setReviewers] = useState([]);
   const [pics, setPics] = useState([]);
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [userImage, setUserImage] = useState(null);
 
   const router = useRouter();
 
   useEffect(() => {
     refetchUserData();
-    fetchStarredArtists();
-    fetchReviews();
-    fetchLikedReviews();
   }, [user]);
 
   useEffect(() => {
     fetchStarredArtists();
     fetchReviews();
     fetchLikedReviews();
-  }, []);
+  }, [username]);
 
   useEffect(() => {
     showPics();
@@ -379,8 +385,44 @@ export default function Profile() {
     userImages[pic.username] = pic.image;
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const reviewsPerPage = 3;
+
+  const indexOfLastReview = currentPage * reviewsPerPage;
+  const indexOfFirstReview = indexOfLastReview - reviewsPerPage;
+  const currentReviews = reviews.slice(indexOfFirstReview, indexOfLastReview);
+
+  const totalPages = Math.ceil(reviews.length / reviewsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const showPromo = (e, review) => {
+    e.stopPropagation();
+
+    const userImage =
+      userImages && userImages[review.reviews[0].username]
+        ? userImages[review.reviews[0].username]
+        : avatar;
+
+    setUserImage(userImage);
+    setSelectedReview(review);
+    setIsPromoModalOpen(true);
+  };
+
+  const handleClosePromoModal = () => {
+    setIsPromoModalOpen(false);
+  };
+
   return (
-    <div>
+    <div className="select-none">
+      <GenerateImage
+        isPromoModalOpen={isPromoModalOpen}
+        onClose={handleClosePromoModal}
+        selectedReview={selectedReview}
+        userImage={userImage}
+      />
       <ConfigProvider
         theme={{
           components: {
@@ -495,12 +537,6 @@ export default function Profile() {
             <div className="justify-end mr-24 flex mt-8">
               <div className="px-4">
                 <p className="text-2xl text-center font-bold">
-                  {reviews.length}
-                </p>
-                <p>Albums</p>
-              </div>
-              <div className="px-4">
-                <p className="text-2xl text-center font-bold">
                   {starredArtists.length > 0 ? (
                     <span
                       className="text-sky-400 cursor-pointer"
@@ -514,7 +550,7 @@ export default function Profile() {
                     </span>
                   )}
                 </p>
-                <p>⭐️ Artists</p>
+                <p>Fav Artists</p>
               </div>
               <div className="px-4">
                 <p className="text-2xl text-center font-bold">
@@ -547,7 +583,7 @@ export default function Profile() {
                 <p>Following</p>
               </div>
               <Modal
-                title="Favorite Artists"
+                title={`${username}'s Favorite Artists`}
                 open={isArtistModalOpen}
                 onCancel={() => setIsArtistModalOpen(false)}
                 footer={null}
@@ -651,16 +687,17 @@ export default function Profile() {
         )}
 
         <div className="ml-24 mt-4">
-          <p className="text-xl font-bold">
-            ✨ Recent reviews - {reviews.length}
-          </p>
+          <p className="text-xl font-bold">✨ Recent Reviews</p>
           {reviews.length > 0 ? (
             <div className="mr-24 mt-2">
-              {reviews.map((review, index) => (
+              {currentReviews.map((review, index) => (
                 <React.Fragment key={review._id}>
                   <div
-                    className="hover:bg-gray-700 rounded p-3 flex items-center rounded-lg mt-2 justify-between cursor-pointer"
+                    className="rounded p-3 flex items-center rounded-lg mt-2 justify-between cursor-pointer"
                     onClick={() => clickedAlbum(review._id)}
+                    style={{
+                      background: index % 2 === 0 ? "#111827" : "#374151",
+                    }}
                   >
                     <div className="flex w-80 items-center">
                       <img
@@ -704,19 +741,46 @@ export default function Profile() {
                           .slice(-11)}
                       </p>
                     </div>
+                    {console.log(userImages["usukhu"])}
+                    <div
+                      className="z-10 hover:bg-sky-400 px-2 py-1 rounded-full"
+                      onClick={(e) => showPromo(e, review)}
+                    >
+                      <ThunderboltFilled />
+                    </div>
                   </div>
-                  {index !== reviews.length - 1 && (
-                    <hr className="border-t border-white my-2" />
-                  )}
                 </React.Fragment>
               ))}
+              <div className="flex items-center justify-end mt-4">
+                <p className="text-sm">
+                  Showing {indexOfFirstReview + 1}-{indexOfLastReview} of{" "}
+                  <span className="font-bold">{reviews.length} reviews</span>
+                </p>
+                <div className="ml-4 flex items-center space-x-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-2 py-0.5 rounded text-sm font-semibold ${
+                          page === currentPage
+                            ? "bg-gray-700 text-white"
+                            : "bg-white text-black"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
             </div>
           ) : (
             <p>{user} has not reviewed any albums yet.</p>
           )}
         </div>
         <div className="mt-4 ml-24">
-          <p className="font-bold text-xl">👍 Liked reviews</p>
+          <p className="font-bold text-xl">🙌 Liked Reviews</p>
           {likedReviews.length > 0 ? (
             <div
               className="mt-4 mr-24 flex gap-4"
@@ -725,50 +789,54 @@ export default function Profile() {
               {likedReviews.map((review) => (
                 <div
                   key={review.likedReview._id}
-                  className="border border-white rounded-lg p-3 hover:bg-gray-700 cursor-pointer"
+                  className="border border-white rounded-2xl p-3 hover:bg-gray-700 cursor-pointer"
                   style={{ minWidth: "200px" }}
                   onClick={() => clickedAlbum(review._id)}
                 >
-                  <div className="flex flex-col items-center mb-4">
-                    <div className="flex items-center">
-                      <img
-                        src={review.image}
-                        style={{ width: "30px", borderRadius: "10%" }}
-                      ></img>
-                      <div className="leading-5 ml-2">
-                        <p className="font-semibold text-xs">{review.name}</p>
-                        <p className="text-xs">{review.artist}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center text-center">
+                  <div className="flex flex-col items-center ">
                     <img
                       src={
                         userImages[review.likedReview.username] ||
                         "/images/profile.png"
                       }
                       style={{
-                        width: "50px",
-                        height: "50px",
+                        width: "60px",
+                        height: "60px",
                         objectFit: "cover",
                         borderRadius: "50%",
                       }}
                     ></img>
-                    <div className="ml-2 leading-5 flex flex-col">
-                      <p className="font-semibold">
+                    <div className="leading-5 flex flex-col flex-shrink-0">
+                      <p className="font-semibold text-center mt-1">
                         @{review.likedReview.username}
                       </p>
-                      <p>{review.likedReview.title}</p>
-                      <Rate
-                        allowHalf
-                        defaultValue={review?.likedReview.rating}
-                        disabled
-                        style={{
-                          fontSize: "13px",
-                          paddingBlock: "2px",
-                          borderRadius: "10px",
-                        }}
-                      />
+                      <div className="flex flex-col  items-center mt-2 mb-2 bg-gray-700 pr-2 rounded-md">
+                        <div className="flex items-center">
+                          <img
+                            src={review.image}
+                            style={{ width: "32px", borderRadius: "10%" }}
+                          ></img>
+                          <div className="leading-4 ml-2">
+                            <p className="font-semibold text-xs">
+                              {review.name}
+                            </p>
+                            <p className="text-xs">{review.artist}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <p>{review.likedReview.title}</p>
+                        <Rate
+                          allowHalf
+                          defaultValue={review?.likedReview.rating}
+                          disabled
+                          style={{
+                            fontSize: "13px",
+                            paddingBlock: "2px",
+                            borderRadius: "10px",
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

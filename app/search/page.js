@@ -53,7 +53,7 @@ export default function Search({ searchParams }) {
       const fetchResults = async () => {
         try {
           const response = await fetch(
-            `https://api.spotify.com/v1/search?q=${searchParams.q}&type=album%2Cartist&limit=10`,
+            `https://api.spotify.com/v1/search?q=${searchParams.q}&type=album%2Cartist&limit=12`,
             {
               method: "GET",
               headers: {
@@ -140,7 +140,7 @@ export default function Search({ searchParams }) {
     }
   };
 
-  console.log(artists);
+  const filteredAlbums = albums.filter((album) => album.album_type === "album");
 
   const clickedArtist = async (
     artistID,
@@ -184,7 +184,7 @@ export default function Search({ searchParams }) {
   };
 
   return (
-    <div className="mt-24 justify-center items-center">
+    <div className="mt-24 justify-center items-center select-none">
       <div className="ml-24 mb-4 font-bold">
         <button
           onClick={() => setResultType("artists")}
@@ -282,11 +282,11 @@ export default function Search({ searchParams }) {
         </>
       ) : resultType === "albums" ? (
         <>
-          {albums.length === 0 ? (
+          {filteredAlbums.length === 0 ? (
             <p className="ml-24">😔 No results were found. Please try again!</p>
           ) : (
             <div className="grid grid-cols-6 gap-4 px-24">
-              {albums.map((album) => (
+              {filteredAlbums.map((album) => (
                 <Card key={album.id} sx={{ width: 190, borderRadius: "5%" }}>
                   <CardActionArea
                     onClick={() =>

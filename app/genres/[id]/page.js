@@ -115,14 +115,49 @@ export default function Genre() {
     }
   };
 
-  const clickedArtist = (artistID) => {
-    router.replace(`/artist/${artistID}`);
+  const clickedArtist = async (
+    artistID,
+    name,
+    popularity,
+    imageUrl,
+    followers,
+    genres
+  ) => {
+    try {
+      const response = await fetch("/api/saveArtist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          artistID: artistID,
+          name: name,
+          popularity: popularity,
+          imageUrl: imageUrl,
+          followers: followers,
+          genres: genres,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to save clicked artist:", response.statusText);
+        return;
+      }
+
+      console.log("Artist saved successfully!");
+
+      router.replace(`/artist/${artistID}`);
+    } catch (error) {
+      console.error("Error saving clicked album:", error);
+    }
   };
 
   return (
     <div className="mt-24 justify-center items-center">
       <div className="ml-24 mb-4 font-bold">
-        <p className="mb-2 uppercase text-xl">🎻 {genre}</p>
+        <p className="mb-2 text-xl">
+          Genre: <span className="capitalize">{genre}</span>
+        </p>
         <button
           className={`border border-white border-solid rounded-xl px-2 py-1 ${
             resultType === "artists" ? "bg-white" : ""
@@ -155,7 +190,18 @@ export default function Genre() {
                     width: 180,
                   }}
                 >
-                  <CardActionArea onClick={() => clickedArtist(artist.id)}>
+                  <CardActionArea
+                    onClick={() =>
+                      clickedArtist(
+                        artist.id,
+                        artist.name,
+                        artist.popularity,
+                        artist.images[0].url,
+                        artist.followers.total,
+                        artist.genres
+                      )
+                    }
+                  >
                     <CardMedia
                       component="img"
                       sx={{

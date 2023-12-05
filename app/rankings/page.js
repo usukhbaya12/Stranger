@@ -50,9 +50,9 @@ const Rankings = () => {
     : albums;
 
   return (
-    <div className="mt-24">
+    <div className="mt-24 select-none">
       <div className="flex mt-8 items-center px-24">
-        <p className="font-bold text-xl">Top albums</p>
+        <p className="font-bold text-xl">Stranger's Top Ranked Albums</p>
         <Select
           showSearch
           style={{
@@ -119,6 +119,7 @@ const Rankings = () => {
           ]}
         />
       </div>
+      <p className="ml-24 mt-1">🪩 Our finests of all-time.</p>
 
       {filteredAlbums.length > 0 ? (
         <div className="mt-4 px-24">
@@ -134,7 +135,6 @@ const Rankings = () => {
                 href={`https://open.spotify.com/album/${album._id}`}
               >
                 <img src="/images/spotify.png" style={{ height: "20px" }}></img>
-                <p> 🎧</p>
               </a>
 
               <div
@@ -154,7 +154,7 @@ const Rankings = () => {
                   <p>{album.artist}</p>
                 </div>
               </div>
-              <p className="w-[50px] text-center text-sm">
+              <p className="w-[50px] text-center text-sm font-semibold">
                 {new Date(album.released).getFullYear()}
               </p>
               <div className="flex-col leading-4 text-center w-[150px]">
@@ -177,10 +177,9 @@ const Rankings = () => {
                 >
                   {" "}
                   <p>
-                    <span className="font-bold text-lg text-sky-400">
+                    <span className="font-black text-sky-400">
                       {album.averageRating.toFixed(2)}
                     </span>
-                    <span className="text-sm"> / 5.0</span>
                   </p>
                   <Rate
                     allowHalf
@@ -195,8 +194,8 @@ const Rankings = () => {
                 </ConfigProvider>
               </div>
 
-              <p className="w-[70px] text-sm font-medium">
-                {album.reviews.length} rating(s)
+              <p className="w-[70px] text-sm font-semibold">
+                ✍️ {album.reviews.length}
               </p>
             </div>
           ))}

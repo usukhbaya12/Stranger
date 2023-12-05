@@ -1,16 +1,16 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 
 const Menu = () => {
   const [hasBackground, setHasBackground] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [searchInput, setSearchInput] = useState("");
+  const [pic, setPic] = useState("");
 
   const handleSearch = () => {
     console.log("Searched for", searchInput);
@@ -35,17 +35,40 @@ const Menu = () => {
     };
   }, []);
 
+  useEffect(() => {
+    getImage();
+  });
+
+  const getImage = async () => {
+    try {
+      const response = await fetch("/api/getUser", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: session?.user?.username,
+        }),
+      });
+
+      const data = await response.json();
+      setPic(data.user.image);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    }
+  };
+
   return (
     <nav
-      className={`dark:bg-${hasBackground ? "midnight" : "transparent"} bg-${
-        hasBackground ? "midnight" : "transparent"
+      className={`dark:bg-${hasBackground ? "black" : "transparent"} bg-${
+        hasBackground ? "gray-700" : "transparent"
       } border-gray-200 fixed top-0 w-full transition-all duration-300 ease-in-out`}
     >
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <a href="/" className="flex items-center">
           <img
             src="/images/Stranger-PNG.png"
-            className="h-12 mr-3"
+            className="w-24 h-auto mr-3"
             aria-current="page"
             alt="Stranger Logo"
           />
@@ -188,10 +211,34 @@ const Menu = () => {
             </li>
             <li>
               <Link
-                href={session ? `/user/${session.user.username}` : "/signin"}
+                href={
+                  status === "authenticated"
+                    ? `/user/${session.user.username}`
+                    : "/signin"
+                }
                 className="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0 dark:bg-white dark:text-black md:dark:hover:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent dark:border-gray-700"
               >
-                <span className="px-2">{session ? "Profile" : "Sign In"}</span>
+                <span>
+                  {status === "authenticated" ? (
+                    <div className="flex px-1 items-center">
+                      <img
+                        className="m-0 p-0"
+                        src={pic || "/images/profile.png"}
+                        alt="Profile"
+                        style={{
+                          width: "18px",
+                          height: "18px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          verticalAlign: "middle",
+                        }}
+                      />
+                      <p className="ml-1">Profile</p>
+                    </div>
+                  ) : (
+                    <p className="px-2">Sign In</p>
+                  )}
+                </span>
               </Link>
             </li>
           </ul>

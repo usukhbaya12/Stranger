@@ -107,7 +107,7 @@ export default function Genres() {
   }
 
   return (
-    <div className="mt-24">
+    <div className="mt-24 select-none">
       <p className=" px-24 mb-4 font-bold text-xl">Available Genres</p>
       <TextField
         className="text-white bg-gray-800 rounded-2xl ml-24"

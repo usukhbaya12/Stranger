@@ -20,6 +20,7 @@ export default function Home() {
   const [accessToken, setAccessToken] = useState("");
   const date = new Date();
   const router = useRouter();
+  const username = session?.user?.username;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,7 +57,7 @@ export default function Home() {
         };
 
         const response = await fetch(
-          `https://api.spotify.com/v1/browse/new-releases?limit=6`,
+          `https://api.spotify.com/v1/browse/new-releases?limit=50`,
           artistParameters
         );
         const data = await response.json();
@@ -70,7 +71,7 @@ export default function Home() {
     const fetchGrammysAlbums = async () => {
       try {
         const grammysResponse = await fetch(
-          "https://api.spotify.com/v1/playlists/37i9dQZF1DX5FyxM4IcLn6/tracks?fields=items.track.album&limit=16",
+          "https://api.spotify.com/v1/playlists/2LoI7SSDNjskpTMipZBvtB/tracks?fields=items.track.album&limit=16",
           {
             method: "GET",
             headers: {
@@ -89,6 +90,13 @@ export default function Home() {
     fetchNewReleases();
     fetchGrammysAlbums();
   }, [accessToken]);
+
+  const filteredAlbums = grammysAlbums.filter(
+    (album) => album.album_type === "album"
+  );
+
+  const New = albums.filter((album) => album.album_type === "album");
+  const NewAlbums = New.slice(0, 6);
 
   const clickedAlbum = async (
     albumID,
@@ -130,44 +138,54 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <main className="select-none">
       <Head>
         <title>Stranger</title>
       </Head>
-      <img src="images/tswift.png" alt="Taylor Swift"></img>
-      <div className="text-center -mt-20 leading-6 text-2xl font-bold">
-        <h2>Track albums you listened.</h2>
-        <h2>Save those you want to listen.</h2>
-        <h2>Tell your friends what's good.</h2>
-      </div>
-      <div className="flex justify-center mt-4 items-center">
-        <img src={"/images/Stranger-PNG.png"} width={"100px"}></img>
-        <a className="ml-1" href="https://facebook.com/Strangerentnews">
-          <FacebookFilled></FacebookFilled>
-        </a>
-        <a className="ml-1" href="https://youtube.com/@StrangerTVMongolia">
-          <YoutubeFilled></YoutubeFilled>
-        </a>
-      </div>
+      <img src="/images/tswift.png" alt="Taylor Swift"></img>
+      {session ? (
+        <div className="text-center -mt-32 leading-6 ">
+          <h2 className="text-2xl font-bold">Welcome, {username} 🪩</h2>
+          <p>Here's what we've been listening...</p>
+        </div>
+      ) : (
+        <div className="text-center -mt-20 leading-6 text-2xl font-bold">
+          <h2>Track albums you listened.</h2>
+          <h2>Save those you want to listen.</h2>
+          <h2>Tell your friends what's good.</h2>
+          <div className="flex justify-center mt-4 items-center">
+            <img src={"/images/Stranger-PNG.png"} width={"100px"}></img>
+            <a className="ml-1" href="https://facebook.com/Strangerentnews">
+              <FacebookFilled></FacebookFilled>
+            </a>
+            <a className="ml-1" href="https://youtube.com/@StrangerTVMongolia">
+              <YoutubeFilled></YoutubeFilled>
+            </a>
+          </div>
+          <div
+            id="NewMusic"
+            className="container mx-auto flex justify-center mt-4"
+          >
+            <Link
+              href="/signup"
+              className="font-semibold text-white bg-green-800 hover:bg-green-900 focus:ring-green-300 rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
+            >
+              🎙️ Get started now.
+            </Link>
+          </div>
+        </div>
+      )}
 
-      <div id="NewMusic" className="container mx-auto flex justify-center mt-4">
-        <Link
-          href={session ? `/user/${session.user.username}` : "/signup"}
-          className="font-semibold text-white bg-green-800 hover:bg-green-900 focus:ring-green-300 rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none dark:focus:ring-green-800"
-        >
-          🎙️ Get started now.
-        </Link>
-      </div>
       <div>
-        <p className="ml-24 mt-12 font-bold text-xl">New Releases</p>
+        <p className="ml-24 mt-6 font-bold text-xl">New Releases</p>
         <p className="ml-24 -mt-2 mb-4">
           As of <i>{date.toDateString()}</i>
         </p>
-        {albums.length === 0 ? (
+        {NewAlbums.length === 0 ? (
           <p className="ml-56"></p>
         ) : (
           <div className="grid grid-cols-6 gap-10 px-24 mr-16">
-            {albums.map((album) => (
+            {NewAlbums.map((album) => (
               <Card key={album.id} sx={{ width: 220, borderRadius: "5%" }}>
                 <CardActionArea
                   onClick={() =>
@@ -312,11 +330,11 @@ export default function Home() {
         <p className="ml-24 -mt-2 mb-4">
           Rate this year's Grammy-nominated albums.
         </p>
-        {grammysAlbums.length === 0 ? (
+        {filteredAlbums.length === 0 ? (
           <p className="ml-56"></p>
         ) : (
           <div className="grid grid-cols-8 gap-2 px-24 mr-8">
-            {grammysAlbums.map((album) => (
+            {filteredAlbums.map((album) => (
               <Card
                 className="bg-transparent"
                 key={album.id}

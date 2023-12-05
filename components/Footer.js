@@ -5,7 +5,7 @@ import { FacebookFilled, YoutubeFilled } from "@ant-design/icons";
 export default function Footer() {
   const { data: session } = useSession();
   return (
-    <div className="justify-between flex mt-12 bg-gray-800 border-t border-white border-dashed px-24">
+    <div className="justify-between flex mt-12 bg-gray-800 border-t border-white border-dashed px-24 cursor-default select-none">
       <div className="mt-8 pb-40">
         <img src="/images/Stranger-PNG.png" width="90px"></img>
         <p className="text-sm font-bold ml-1 leading-3">
@@ -27,14 +27,6 @@ export default function Footer() {
           {">"} New Music
         </a>
         <br></br>
-        <a href="/genres" className="text-sm cursor-pointer hover:text-sky-400">
-          {">"} Genres
-        </a>
-        <br></br>
-        <a href="#" className="text-sm cursor-pointer hover:text-sky-400">
-          {">"} Reviews
-        </a>
-        <br></br>
         <a
           href="/#Grammys2024"
           className="text-sm cursor-pointer hover:text-sky-400"
@@ -42,6 +34,25 @@ export default function Footer() {
           {">"} GRAMMYs 2024
         </a>
         <br></br>
+        <a href="/genres" className="text-sm cursor-pointer hover:text-sky-400">
+          {">"} Genres
+        </a>
+        <br></br>
+        <a
+          href="/reviews"
+          className="text-sm cursor-pointer hover:text-sky-400"
+        >
+          {">"} Reviews
+        </a>
+        <br></br>
+        <a
+          href="/rankings"
+          className="text-sm cursor-pointer hover:text-sky-400"
+        >
+          {">"} Top Albums
+        </a>
+        <br></br>
+
         <a
           onClick={session ? () => signOut() : () => signIn()}
           className="text-sm cursor-pointer hover:text-sky-400"
