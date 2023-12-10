@@ -38,7 +38,7 @@ export default function Home() {
         const authData = await authResponse.json();
         setAccessToken(authData.access_token);
       } catch (error) {
-        console.error("Error fetching access token: ", error);
+        // console.error("Error fetching access token: ", error);
       }
     };
 
@@ -62,9 +62,8 @@ export default function Home() {
         );
         const data = await response.json();
         setAlbums(data.albums.items);
-        console.log(data);
       } catch (error) {
-        console.error("Error fetching data: ", error);
+        // console.error("Error fetching data: ", error);
       }
     };
 
@@ -83,7 +82,7 @@ export default function Home() {
         const grammysData = await grammysResponse.json();
         setGrammysAlbums(grammysData.items.map((item) => item.track.album));
       } catch (error) {
-        console.error("Error fetching Grammys data: ", error);
+        // console.error("Error fetching Grammys data: ", error);
       }
     };
 

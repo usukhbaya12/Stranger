@@ -9,7 +9,7 @@ import { CardActionArea } from "@mui/material";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import { StarFilled } from "@ant-design/icons";
-import { Tooltip } from "antd";
+import { Tooltip, Rate, ConfigProvider } from "antd";
 import { useSession } from "next-auth/react";
 
 const defaultImageUrl =
@@ -24,7 +24,7 @@ const Artist = () => {
   const [accessToken, setAccessToken] = useState("");
   const router = useRouter();
   const username = session?.user?.username;
-  const userId = session?.user?.id;
+  const [localAlbums, setLocalAlbums] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,10 +86,38 @@ const Artist = () => {
       const artistId = window.location.toString().slice(-22);
       fetchArtistData(
         `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album&limit=20`,
-        (data) => setAlbums(data.items || [])
+        async (data) => {
+          try {
+            const fetchedAlbums = data.items || [];
+            setAlbums(fetchedAlbums);
+
+            const albumIds = fetchedAlbums.map((album) => album.id) || [];
+
+            const response = await fetch("/api/getAlbums", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                albumIds: albumIds,
+              }),
+            });
+
+            if (response.ok) {
+              const responseData = await response.json();
+              setLocalAlbums(responseData.albumsData);
+            } else {
+              console.error("Failed to fetch albums:", response.statusText);
+            }
+          } catch (error) {
+            console.error("Error fetching albums:", error);
+          }
+        }
       );
     }
   }, [accessToken]);
+
+  console.log("Harii", localAlbums);
 
   const fetchArtistLocal = async () => {
     try {
@@ -112,8 +140,6 @@ const Artist = () => {
     } catch (error) {
       console.error("Error fetching artist:", error);
     }
-
-    console.log("haha", localArtist);
   };
 
   const handleClickAlbum = async (
@@ -345,56 +371,110 @@ const Artist = () => {
           <p className="font-normal">No albums were found.</p>
         ) : (
           <div className="grid grid-cols-6 gap-4 mr-24">
-            {albums?.map((album) => (
-              <Card key={album.id} sx={{ width: 190, borderRadius: "5%" }}>
-                <CardActionArea
-                  onClick={() =>
-                    handleClickAlbum(
-                      album.id,
-                      album.name,
-                      album.artists[0].name,
-                      album.release_date,
-                      album.images[0].url,
-                      album.label,
-                      album.total_tracks
-                    )
-                  }
-                >
-                  <CardMedia
-                    component="img"
-                    width="120"
-                    image={
-                      album.images && album.images[0]
-                        ? album.images[0].url
-                        : defaultImageUrl
-                    }
-                    alt="album cover"
-                  />
-                  <CardContent>
-                    <Typography
-                      gutterBottom
-                      component="div"
-                      fontFamily={"DM Sans"}
-                      fontWeight={600}
-                      lineHeight={0.95}
+            <ConfigProvider
+              theme={{
+                components: {
+                  Modal: {
+                    titleColor: "black",
+                  },
+                },
+                token: {
+                  colorTextPlaceholder: "rgb(180, 180, 180)",
+                  fontFamily: "DM Sans",
+                  colorBgContainer: "rgba(31,41,55,255)",
+                  colorText: "rgba(255,255,255)",
+                  colorFillContent: "rgba(0,0,0, 0.2)",
+                  marginXS: "6",
+                },
+              }}
+            >
+              {albums?.map((album) => {
+                const matchingAlbum = localAlbums.find(
+                  (localAlbum) => localAlbum._id === album.id
+                );
+                return (
+                  <Card key={album.id} sx={{ width: 190, borderRadius: "5%" }}>
+                    <CardActionArea
+                      onClick={() =>
+                        handleClickAlbum(
+                          album.id,
+                          album.name,
+                          album.artists[0].name,
+                          album.release_date,
+                          album.images[0].url,
+                          album.label,
+                          album.total_tracks
+                        )
+                      }
                     >
-                      {album.name}
-                    </Typography>
-                    <Typography variant="body2" fontFamily={"DM Sans"}>
-                      {album.artists[0].name}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      fontFamily={"DM Sans"}
-                      fontStyle={"italic"}
-                    >
-                      {album.release_date.substring(0, 4)}
-                    </Typography>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            ))}
+                      <CardMedia
+                        component="img"
+                        width="120"
+                        image={
+                          album.images && album.images[0]
+                            ? album.images[0].url
+                            : defaultImageUrl
+                        }
+                        alt="album cover"
+                      />
+                      <CardContent>
+                        <Typography
+                          gutterBottom
+                          component="div"
+                          fontFamily={"DM Sans"}
+                          fontWeight={600}
+                          lineHeight={0.95}
+                        >
+                          {album.name}
+                        </Typography>
+                        <div className="flex items-center">
+                          <Rate
+                            allowHalf
+                            value={matchingAlbum ? matchingAlbum.avgRating : 0}
+                            disabled
+                            style={{
+                              fontSize: "15px",
+                              borderRadius: "10px",
+                            }}
+                          />
+                          <Typography
+                            fontFamily={"DM Sans"}
+                            variant="body2"
+                            marginLeft={"5px"}
+                          >
+                            {matchingAlbum
+                              ? matchingAlbum.avgRating.toFixed(2)
+                              : 0}
+                          </Typography>
+                          <Typography
+                            fontFamily={"DM Sans"}
+                            variant="body2"
+                            color="text.secondary"
+                            marginLeft={"5px"}
+                            fontStyle={"italic"}
+                          >
+                            ({matchingAlbum ? matchingAlbum.reviews?.length : 0}
+                            )
+                          </Typography>
+                        </div>
+
+                        <Typography variant="body2" fontFamily={"DM Sans"}>
+                          {album.artists[0].name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          fontFamily={"DM Sans"}
+                          fontStyle={"italic"}
+                        >
+                          {album.release_date.substring(0, 4)}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                );
+              })}
+            </ConfigProvider>
           </div>
         )}
       </div>

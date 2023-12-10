@@ -977,14 +977,14 @@ export default function Profile() {
                       <p className="font-semibold text-center mt-1">
                         @{review.likedReview.username}
                       </p>
-                      <div className="flex flex-col items-center mt-2 mb-2 bg-gray-700 pr-2 rounded-md">
+                      <div className="flex flex-col items-center mt-2 mb-2 pr-2 rounded-md">
                         <div className="flex items-center flex-shrink-0">
                           <img
                             src={review.image}
                             style={{ width: "32px", borderRadius: "10%" }}
                           ></img>
-                          <div className="leading-4 ml-2 flex-shrink-0 no-wrap">
-                            <p className="font-semibold text-xs">
+                          <div className="leading-4 ml-2">
+                            <p className="font-semibold text-xs text-justify">
                               {review.name}
                             </p>
                             <p className="text-xs">{review.artist}</p>
